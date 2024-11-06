@@ -1,5 +1,6 @@
 #include "finger_algorithm.h"
 #include <dlfcn.h>
+#include <iostream>
 
 void* FingerAlgorithm::g_algorithmSDK = nullptr;
 
@@ -19,16 +20,36 @@ void FingerAlgorithm::destroySDK() {
 }
 
 void* FingerAlgorithm::getFunction(const char* name) {
-    if (!g_algorithmSDK)
+    if (!g_algorithmSDK) {
+        std::cout << "Debug: SDK 未初始化" << std::endl;
         return nullptr;
-    return dlsym(g_algorithmSDK, name);
+    }
+    
+    void* func = dlsym(g_algorithmSDK, name);
+    if (!func) {
+        std::cout << "Debug: 获取函数 " << name << " 失败: " << dlerror() << std::endl;
+    }
+    return func;
 }
 
 void* FingerAlgorithm::initAlgorithm(int mode, int width, int height, unsigned char* buffer) {
     typedef void* (*Func)(int, int, int, unsigned char*);
+    std::cout << "Debug: 开始获取算法函数..." << std::endl;
+    
     auto func = (Func)getFunction("BIOKEY_INIT_SIMPLE");
-    if (!func) return nullptr;
-    return func(mode, width, height, buffer);
+    if (!func) {
+        std::cout << "Debug: 获取算法函数失败: " << dlerror() << std::endl;
+        return nullptr;
+    }
+    
+    std::cout << "Debug: 获取算法函数成功，开始调用..." << std::endl;
+    std::cout << "Debug: 参数 - mode: " << mode << ", width: " << width 
+              << ", height: " << height << ", buffer: " << (buffer ? "非空" : "空") << std::endl;
+    
+    void* result = func(mode, width, height, buffer);
+    std::cout << "Debug: 算法初始化结果: " << result << std::endl;
+    
+    return result;
 }
 
 int FingerAlgorithm::closeAlgorithm(void* handle) {
