@@ -24,8 +24,8 @@ void* FingerAlgorithm::getFunction(const char* name) {
     return dlsym(g_algorithmSDK, name);
 }
 
-void* FingerAlgorithm::initAlgorithm(int mode, int width, int height, int dpi) {
-    typedef void* (*Func)(int, int, int, int);
+void* FingerAlgorithm::initAlgorithm(int mode, int width, int height, void* dpi) {
+    typedef void* (*Func)(int, int, int, void*);
     auto func = (Func)getFunction("BIOKEY_INIT_SIMPLE");
     if (!func) return nullptr;
     return func(mode, width, height, dpi);

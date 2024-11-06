@@ -6,8 +6,8 @@ public:
     static bool initSDK();
     static void destroySDK();
     
-    // 初始化算法
-    static void* initAlgorithm(int mode, int width, int height, int dpi);
+    // 初始化算法，dpi 参数可以为 nullptr
+    static void* initAlgorithm(int mode, int width, int height, void* dpi = nullptr);
     
     // 关闭算法
     static int closeAlgorithm(void* handle);

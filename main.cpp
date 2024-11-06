@@ -49,7 +49,7 @@ public:
                         int width = device_->getParameter(1);  // 1 表示宽度
                         int height = device_->getParameter(2); // 2 表示高度
                         // 初始化算法句柄
-                        algorithmHandle_ = FingerAlgorithm::initAlgorithm(0, width, height, 0);
+                        algorithmHandle_ = FingerAlgorithm::initAlgorithm(0, width, height);
                         success = algorithmHandle_ != nullptr;
                     }
                     
