@@ -37,18 +37,6 @@ export class FingerService {
       throw new Error('Failed to initialize SDK');
     }
     
-    // 检查设备连接
-    const connResult = await this.sendCommand({ cmd: 'isConnected' });
-    if (!connResult.connected) {
-      throw new Error('No device connected');
-    }
-    
-    // 打开设备
-    const openResult = await this.sendCommand({ cmd: 'openDevice' });
-    if (!openResult.success) {
-      throw new Error('Failed to open device');
-    }
-    
     this.initialized = true;
   }
 
