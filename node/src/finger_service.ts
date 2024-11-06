@@ -1,5 +1,25 @@
 import { spawn } from 'child_process'
 
+interface Command {
+  cmd: string
+}
+
+interface InitResult {
+  success: boolean
+  deviceInit?: boolean
+  algorithmInit?: boolean
+}
+
+interface DestroyResult {
+  success: boolean
+}
+
+
+interface OpenDeviceResult {
+  success: boolean
+  error?: string
+}
+
 export class FingerService {
   private static instance: FingerService | null = null;
   private process: any;
@@ -28,34 +48,50 @@ export class FingerService {
   }
 
   // 应用启动时调用
-  async initialize() {
-    if (this.initialized) return;
+  async initialize(): Promise<InitResult> {
+    if (this.initialized) {
+      return {
+        success: true,
+      }
+    } ;
     
     // 初始化 SDK
-    const initResult = await this.sendCommand({ cmd: 'initialize' });
+    const initResult = await this.sendCommand<InitResult>({ cmd: 'initialize' });
     if (!initResult.success) {
       throw new Error('Failed to initialize SDK');
     }
     
     this.initialized = true;
+
+    return initResult
   }
 
   // 应用关闭时调用
-  async cleanup() {
-    if (!this.initialized) return;
+  async cleanup(): Promise<DestroyResult> {
+    if (!this.initialized) {
+      return {
+        success: true,
+      }
+    } ;
     
     try {
-      // 关闭设备
-      await this.sendCommand({ cmd: 'closeDevice' });
       // 销毁 SDK
       await this.sendCommand({ cmd: 'uninitialize' });
       this.initialized = false;
+      return {
+        success: true,
+      }
     } finally {
       if (this.process) {
         this.process.kill();
         this.process = null;
       }
     }
+  }
+
+  // 打开设备
+  async openDevice(): Promise<OpenDeviceResult> {
+    return this.sendCommand<OpenDeviceResult>({ cmd: 'openDevice' })
   }
 
   // 页面相关的操作只需要调用具体的指纹功能
@@ -73,7 +109,7 @@ export class FingerService {
     // 执行识别逻辑
   }
 
-  private async sendCommand(command: any): Promise<any> {
+  private async sendCommand<T>(command: Command): Promise<T> {
     return new Promise((resolve, reject) => {
       const cmd = JSON.stringify(command)
       this.process.stdin.write(cmd + '\n')
