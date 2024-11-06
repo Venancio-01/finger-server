@@ -15,6 +15,8 @@ find_package(Threads REQUIRED)
 add_executable(finger_cli
     main.cpp
     finger_device.cpp
+    finger_algorithm.cpp
+    base64.cpp
 )
 
 # 链接依赖库
