@@ -116,10 +116,15 @@ export class FingerService {
       
       const handler = (data: Buffer) => {
         try {
-          const response = JSON.parse(data.toString())
+          const str = data.toString().trim()
+          // 尝试解析为 JSON，如果失败则返回原始字符串
+          const response = str.startsWith('{') || str.startsWith('[') ? 
+            JSON.parse(str) : 
+            { success: false, message: str }
           resolve(response)
         } catch (e) {
-          reject(e)
+          // JSON 解析失败时,返回错误信息
+          reject(new Error(`解析响应失败: ${e.message}`))
         }
       }
 
