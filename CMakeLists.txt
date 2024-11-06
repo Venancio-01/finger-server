@@ -8,6 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 找到 nlohmann_json
 find_package(nlohmann_json REQUIRED)
 
+# 添加 pthread 库
+find_package(Threads REQUIRED)
+
 # 添加可执行文件
 add_executable(finger_cli
     main.cpp
@@ -18,5 +21,6 @@ add_executable(finger_cli
 target_link_libraries(finger_cli
     PRIVATE
     nlohmann_json::nlohmann_json
+    ${CMAKE_THREAD_LIBS_INIT}
     dl
 )
