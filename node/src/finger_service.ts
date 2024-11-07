@@ -122,7 +122,7 @@ export class FingerService {
             JSON.parse(str) : 
             { success: false, message: str }
           resolve(response)
-        } catch (e) {
+        } catch (e: any) {
           // JSON 解析失败时,返回错误信息
           reject(new Error(`解析响应失败: ${e.message}`))
         }
