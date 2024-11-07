@@ -44,33 +44,22 @@ public:
                         {"error", "Device not initialized"}
                     };
                 } else {
-                    std::cout << "Debug: 开始打开设备..." << std::endl;
                     bool success = device_->openDevice();
-                    std::cout << "Debug: 设备打开结果: " << (success ? "成功" : "失败") << std::endl;
                     
                     if (success) {
                         // 获取设备参数
                         int width = device_->getParameter(1);
                         int height = device_->getParameter(2);
-                        std::cout << "Debug: 设备参数 - 宽度: " << width << ", 高度: " << height << std::endl;
-                        
-                        // 初始化算法句柄
-                        std::cout << "Debug: 开始初始化算法..." << std::endl;
                         
                         // 检查 SDK 是否正确加载
                         void* sdkHandle = dlopen("libzkfp.so", RTLD_LAZY);
                         if (!sdkHandle) {
-                            std::cout << "Debug: 加载算法 SDK 失败: " << dlerror() << std::endl;
+                            success = false;
                         } else {
                             dlclose(sdkHandle);
                         }
                         
                         algorithmHandle_ = FingerAlgorithm::initAlgorithm(0, width, height, nullptr);
-                        std::cout << "Debug: 算法初始化返回值: " << algorithmHandle_ << std::endl;
-                        if (!algorithmHandle_) {
-                            std::cout << "Debug: 算法初始化失败，dlerror: " << dlerror() << std::endl;
-                        }
-                        
                         success = algorithmHandle_ != nullptr;
                     }
                     

@@ -15,8 +15,7 @@
 					"source" : ".",
 					"targetIndexes" : 
 					[
-						0,
-						1
+						0
 					]
 				}
 			],
@@ -31,8 +30,7 @@
 					"name" : "finger_cli",
 					"targetIndexes" : 
 					[
-						0,
-						1
+						0
 					]
 				}
 			],
@@ -43,13 +41,6 @@
 					"id" : "finger_cli::@6890427a1f51a3e7e1df",
 					"jsonFile" : "target-finger_cli-Debug-23e4dce633c55d2f022c.json",
 					"name" : "finger_cli",
-					"projectIndex" : 0
-				},
-				{
-					"directoryIndex" : 0,
-					"id" : "finger_test::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-finger_test-Debug-048bb822c29965da9ee1.json",
-					"name" : "finger_test",
 					"projectIndex" : 0
 				}
 			]

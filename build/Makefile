@@ -129,19 +129,6 @@ finger_cli/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/build
 .PHONY : finger_cli/fast
 
-#=============================================================================
-# Target rules for targets named finger_test
-
-# Build rule for target.
-finger_test: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 finger_test
-.PHONY : finger_test
-
-# fast build rule for target.
-finger_test/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/build
-.PHONY : finger_test/fast
-
 base64.o: base64.cpp.o
 .PHONY : base64.o
 
@@ -214,30 +201,6 @@ finger_device.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_device.cpp.s
 .PHONY : finger_device.cpp.s
 
-finger_test.o: finger_test.cpp.o
-.PHONY : finger_test.o
-
-# target to build an object file
-finger_test.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/finger_test.cpp.o
-.PHONY : finger_test.cpp.o
-
-finger_test.i: finger_test.cpp.i
-.PHONY : finger_test.i
-
-# target to preprocess a source file
-finger_test.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/finger_test.cpp.i
-.PHONY : finger_test.cpp.i
-
-finger_test.s: finger_test.cpp.s
-.PHONY : finger_test.s
-
-# target to generate assembly for a file
-finger_test.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/finger_test.cpp.s
-.PHONY : finger_test.cpp.s
-
 main.o: main.cpp.o
 .PHONY : main.o
 
@@ -271,7 +234,6 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... finger_cli"
-	@echo "... finger_test"
 	@echo "... base64.o"
 	@echo "... base64.i"
 	@echo "... base64.s"
@@ -281,9 +243,6 @@ help:
 	@echo "... finger_device.o"
 	@echo "... finger_device.i"
 	@echo "... finger_device.s"
-	@echo "... finger_test.o"
-	@echo "... finger_test.i"
-	@echo "... finger_test.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

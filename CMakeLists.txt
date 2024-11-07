@@ -26,8 +26,3 @@ target_link_libraries(finger_cli
     ${CMAKE_THREAD_LIBS_INIT}
     dl
 )
-
-# 添加测试可执行文件
-add_executable(finger_test
-    finger_test.cpp
-)

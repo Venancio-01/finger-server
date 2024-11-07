@@ -64,7 +64,6 @@ CMAKE_BINARY_DIR = /home/qingshan/workspace/front-end/finger-cli/build
 
 # The main recursive "all" target.
 all: CMakeFiles/finger_cli.dir/all
-all: CMakeFiles/finger_test.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -73,7 +72,6 @@ preinstall:
 
 # The main recursive "clean" target.
 clean: CMakeFiles/finger_cli.dir/clean
-clean: CMakeFiles/finger_test.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -101,32 +99,6 @@ finger_cli: CMakeFiles/finger_cli.dir/rule
 CMakeFiles/finger_cli.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/clean
 .PHONY : CMakeFiles/finger_cli.dir/clean
-
-#=============================================================================
-# Target rules for target CMakeFiles/finger_test.dir
-
-# All Build rule for target.
-CMakeFiles/finger_test.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/qingshan/workspace/front-end/finger-cli/build/CMakeFiles --progress-num=6,7 "Built target finger_test"
-.PHONY : CMakeFiles/finger_test.dir/all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/finger_test.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/qingshan/workspace/front-end/finger-cli/build/CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/finger_test.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/qingshan/workspace/front-end/finger-cli/build/CMakeFiles 0
-.PHONY : CMakeFiles/finger_test.dir/rule
-
-# Convenience name for target.
-finger_test: CMakeFiles/finger_test.dir/rule
-.PHONY : finger_test
-
-# clean rule for target.
-CMakeFiles/finger_test.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/clean
-.PHONY : CMakeFiles/finger_test.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

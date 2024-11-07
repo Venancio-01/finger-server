@@ -57,5 +57,4 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/finger_cli.dir/DependInfo.cmake"
-  "CMakeFiles/finger_test.dir/DependInfo.cmake"
   )
