@@ -18,7 +18,7 @@ export function isFingerLibExists() {
     console.log('指纹 SDK 文件复制成功')
     return true
   }
-  catch (err) {
+  catch (err: any) {
     console.error(`指纹 SDK 文件复制失败: ${err.message}`)
     return false
   }
@@ -72,7 +72,7 @@ export function closeFingerAlgorithm(handle: unknown): number {
  * @param {unknown} gTemplate 返回最好的模板(建议分配2048字节)
  * @return {*} >0 表⽰成功，值为最好模板的实际数据⻓度
  */
-export function generateFingerTemplate(handle, templates, num, gTemplate) {
+export function generateFingerTemplate(handle: unknown, templates: unknown, num: number, gTemplate: unknown) {
   const result = fingerAlgorithmSDK.BIOKEY_GENTEMPLATE(handle, templates, num, gTemplate)
   const success = result > 0
   return {

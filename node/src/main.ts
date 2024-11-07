@@ -1,8 +1,5 @@
-import { Buffer } from 'buffer'
 import { genResponseData } from './utils'
-import { MAX_DEVICE_NUM, MAX_REGISTRATION_COUNT, TEMPLATE_BYTE_LENGTH } from './utils/config'
-import type { RfidFingerUser } from './database'
-import { insertRfidFingerUser, rfid_finger_user, selectRfidFingerUser, selectRfidFingerUserList, updateRfidFingerUser } from './database'
+import { MAX_DEVICE_NUM, MAX_REGISTRATION_COUNT, TEMPLATE_BYTE_LENGTH } from './config'
 import {
   captureFingerprint,
   closeFingerSensor,
@@ -42,10 +39,7 @@ let deviceHeight = 0
 // 算法句柄
 let algorithmHandler = null
 // 注册时，采集指纹数据数组
-let registerTemplates = []
-
-// 指纹对应的用户数据
-let fingerUserList: RfidFingerUser[] = []
+let registerTemplates: any[] = []
 
 export function initFingerSDK() {
   isFingerLibExists()
@@ -60,18 +54,15 @@ export function destroyFingerSDK() {
 
 /**
  * @description: 查询当前设备在线情况
- * @return {*}
  */
 export function isFingerDeviceConnected(): boolean {
   const deviceCount = enumerateFingerSensors(deviceList, MAX_DEVICE_NUM)
-  info(`指纹仪连接数量：${deviceCount}`)
   connected = deviceCount > 0
   return connected
 }
 
 /**
  * @description: 打开指纹仪设备
- * @return {*}
  */
 export function openFingerDevice() {
   if (!connected) return false
@@ -88,14 +79,11 @@ export function openFingerDevice() {
   const isDeviceOpened = deviceHandle.deref() !== null && algorithmHandler.deref() !== null
   isOpen = isDeviceOpened
 
-  loadFingerTemplates()
-
   return isDeviceOpened
 }
 
 /**
  * @description: 关闭指纹仪设备
- * @return {*}
  */
 export function closeFingerDevice() {
   if (!connected || !isOpen) return false
@@ -122,9 +110,8 @@ export function closeFingerDevice() {
 
 /**
  * @description: 获取指纹仪宽高
- * @return {*}
  */
-export function initDeviceParameters() {
+function initDeviceParameters() {
   deviceWidth = getFingerSensorParameter(deviceHandle, 1)
   deviceHeight = getFingerSensorParameter(deviceHandle, 2)
   imageBuffer = new UcharType(deviceWidth * deviceHeight)
@@ -132,9 +119,8 @@ export function initDeviceParameters() {
 
 /**
  * @description: 开始采集指纹
- * @return {*}
  */
-export function captureFingerTemplate() {
+function captureFingerTemplate() {
   if (!connected || !isOpen) return false
 
   // 获取指纹仪捕获到的图像
@@ -143,58 +129,45 @@ export function captureFingerTemplate() {
 
   const fingerTemplate = new UcharType(2048)
   // 提取图像
-  const templateLength = extractFingerTemplate(algorithmHandler, imageBuffer, deviceWidth, deviceHeight, fingerTemplate, 2048)
+  const templateLength = extractFingerTemplate(
+    algorithmHandler, 
+    imageBuffer, 
+    deviceWidth, 
+    deviceHeight, 
+    fingerTemplate, 
+    2048
+  )
 
   if (templateLength <= 0) return false
 
   return fingerTemplate
 }
 
-export async function handleFingerRegister(userId: number, order: FingerOrder, registerCurrentIndex: number) {
-  let registerResult = null
-  const fingerTemplate = captureFingerTemplate()
-
-  if (fingerTemplate) registerResult = await registerFinger(fingerTemplate, userId, order, registerCurrentIndex)
-
-  return registerResult
-}
-
 /**
  * @description: 注册指纹
- * @return {*}
  */
-export async function registerFinger(fingerTemplate, userId: number, order: FingerOrder, registerCurrentIndex: number) {
-  const resetRegistration = () => {
-    registerTemplates = []
-  }
+export function registerFinger(registerIndex: number) {
+  const fingerTemplate = captureFingerTemplate()
+  if (!fingerTemplate) return genResponseData(false, '采集指纹失败')
 
-  const { success: isRegistered } = identifyFinger(fingerTemplate)
-  if (isRegistered) {
-    resetRegistration()
-    return genResponseData(false, '登记失败，当前手指已登记', { alert: true })
-  }
-
-  if (registerCurrentIndex >= MAX_REGISTRATION_COUNT) {
-    resetRegistration()
-    return genResponseData(false)
-  }
-
-  if (registerCurrentIndex > 0) {
+  if (registerIndex > 0) {
     // 对比前后两次采集的指纹
-    const isMatched = verifyFingerTemplates(algorithmHandler, registerTemplates[registerCurrentIndex - 1], fingerTemplate)
+    const isMatched = verifyFingerTemplates(
+      algorithmHandler, 
+      registerTemplates[registerIndex - 1], 
+      fingerTemplate
+    )
     if (!isMatched) {
-      resetRegistration()
-      return genResponseData(false, '登记失败，请按压同一个手指', {
-        alert: true,
-      })
+      registerTemplates = []
+      return genResponseData(false, '请按压同一个手指')
     }
   }
 
-  registerTemplates[registerCurrentIndex] = fingerTemplate
-  registerCurrentIndex++
+  registerTemplates[registerIndex] = fingerTemplate
+  registerIndex++
 
-  if (registerCurrentIndex !== MAX_REGISTRATION_COUNT)
-    return genResponseData(true, `您还需要按压${MAX_REGISTRATION_COUNT - registerCurrentIndex}次手指`)
+  if (registerIndex !== MAX_REGISTRATION_COUNT)
+    return genResponseData(true, `还需要按压${MAX_REGISTRATION_COUNT - registerIndex}次手指`)
 
   const regTemplates = new TemplateType(registerTemplates)
   const finalTemplate = new UcharType(TEMPLATE_BYTE_LENGTH)
@@ -206,108 +179,47 @@ export async function registerFinger(fingerTemplate, userId: number, order: Fing
   )
 
   if (!genSuccess) {
-    resetRegistration()
-    return genResponseData(false, `生成登记模板失败，错误代码 = ${genResult}`, { alert: true })
-  }
-  const { success: addSuccess, result: addResult } = addFingerTemplateToDb(algorithmHandler, 9999, genResult, finalTemplate)
-
-  if (!addSuccess) {
-    resetRegistration()
-    return genResponseData(true, `添加指纹失败，错误代码 = ${addResult}`, {
-      alert: true,
-    })
+    registerTemplates = []
+    return genResponseData(false, `生成登记模板失败，错误代码 = ${genResult}`)
   }
 
-  const userCondition = and(
-    eq(rfid_finger_user.Userid, Number(userId)),
-    eq(rfid_finger_user.order, order),
+  const { success: addSuccess, result: addResult } = addFingerTemplateToDb(
+    algorithmHandler, 
+    9999, 
+    genResult, 
+    finalTemplate
   )
-  const existingFingerData = await selectRfidFingerUser(userCondition)
 
-  const templateData = finalTemplate.buffer.toString('base64')
-  const orderText = order === 1 ? '一' : '二'
-  if (existingFingerData !== null) {
-    try {
-      await updateRfidFingerUser(
-        userCondition,
-        {
-          FingerData: templateData,
-        },
-      )
-
-      resetRegistration()
-      return genResponseData(true, `指纹${orderText}更新成功`, {
-        registerSuccess: true,
-        alert: true,
-      })
-    }
-    catch (e) {
-      resetRegistration()
-      return genResponseData(false, `指纹${orderText}更新失败`, {
-        alert: true,
-      })
-    }
+  registerTemplates = []
+  
+  if (!addSuccess) {
+    return genResponseData(false, `添加指纹失败，错误代码 = ${addResult}`)
   }
-  else {
-    try {
-      await insertRfidFingerUser({
-        FingerData: templateData,
-        order,
-        Userid: Number(userId),
-        CreateDate: generateCurrentTime(),
-      })
 
-      resetRegistration()
-      return genResponseData(true, `指纹${orderText}添加成功`, {
-        registerSuccess: true,
-        alert: true,
-      })
-    }
-    catch (e) {
-      resetRegistration()
-      return genResponseData(false, `指纹${orderText}添加失败`, {
-        alert: true,
-      })
-    }
-  }
+  return genResponseData(true, '指纹注册成功', {
+    templateData: finalTemplate.buffer.toString('base64')
+  })
 }
 
 /**
  * @description: 识别指纹
- * @return {*}
  */
-export function identifyFinger(fingerTemplate) {
+export function identifyFinger() {
+  const fingerTemplate = captureFingerTemplate()
+  if (!fingerTemplate) return genResponseData(false, '采集指纹失败')
+
   const matchScore = new IntType(1)
   const matchedId = new IntType(1)
-  const identifyResult = identifyFingerTemplate(algorithmHandler, fingerTemplate, matchedId, matchScore)
-  const isIdentified = identifyResult === 1
-  const message = isIdentified ? '识别成功!' : '识别失败'
-  const userIndex = matchedId[0] - 1
-  const userId = fingerUserList[userIndex]?.Userid
-  return genResponseData(isIdentified, message, userId)
-}
-
-export function handleFingerIdentify() {
-  let identifyResult = null
-  const fingerTemplate = captureFingerTemplate()
-
-  if (fingerTemplate) identifyResult = identifyFinger(fingerTemplate)
-
-  return identifyResult
-}
-
-/**
- * @description: 加载数据库指纹模板到内存
- * @return {*}
- */
-export async function loadFingerTemplates() {
-  fingerUserList = await selectRfidFingerUserList()
-  if (fingerUserList.length === 0) return
-
-  fingerUserList.forEach((user) => {
-    if (user.FingerData) {
-      const templateBuffer = Buffer.from(user.FingerData, 'base64')
-      addFingerTemplateToDb(algorithmHandler, user.Userid, TEMPLATE_BYTE_LENGTH, templateBuffer)
-    }
-  })
+  const identifyResult = identifyFingerTemplate(
+    algorithmHandler, 
+    fingerTemplate, 
+    matchedId, 
+    matchScore
+  )
+  
+  return genResponseData(
+    identifyResult === 1,
+    identifyResult === 1 ? '识别成功' : '识别失败',
+    { matchedId: matchedId[0] }
+  )
 }
