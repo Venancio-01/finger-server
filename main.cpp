@@ -45,6 +45,7 @@ public:
                     };
                 } else {
                     bool success = device_->openDevice();
+                    int deviceCount = device_->getDeviceList().size();
                     
                     if (success) {
                         // 获取设备参数
@@ -67,6 +68,7 @@ public:
                         {"success", success},
                         {"error", success ? "" : "Failed to initialize algorithm"},
                         {"debug_info", {
+                            {"device_count", deviceCount},
                             {"device_connected", device_->isDeviceConnected()},
                             {"width", device_->getParameter(1)},
                             {"height", device_->getParameter(2)},
