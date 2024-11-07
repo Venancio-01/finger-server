@@ -1,1 +1,1 @@
-/usr/bin/c++ -g CMakeFiles/finger_test.dir/test.cpp.o -o finger_test
+/usr/bin/c++ -g CMakeFiles/finger_test.dir/finger_test.cpp.o -o finger_test

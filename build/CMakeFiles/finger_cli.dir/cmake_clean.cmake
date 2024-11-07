@@ -1,4 +1,8 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/finger_cli.dir/base64.cpp.o"
+  "CMakeFiles/finger_cli.dir/base64.cpp.o.d"
+  "CMakeFiles/finger_cli.dir/finger_algorithm.cpp.o"
+  "CMakeFiles/finger_cli.dir/finger_algorithm.cpp.o.d"
   "CMakeFiles/finger_cli.dir/finger_device.cpp.o"
   "CMakeFiles/finger_cli.dir/finger_device.cpp.o.d"
   "CMakeFiles/finger_cli.dir/main.cpp.o"

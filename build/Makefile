@@ -142,6 +142,54 @@ finger_test/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/build
 .PHONY : finger_test/fast
 
+base64.o: base64.cpp.o
+.PHONY : base64.o
+
+# target to build an object file
+base64.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/base64.cpp.o
+.PHONY : base64.cpp.o
+
+base64.i: base64.cpp.i
+.PHONY : base64.i
+
+# target to preprocess a source file
+base64.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/base64.cpp.i
+.PHONY : base64.cpp.i
+
+base64.s: base64.cpp.s
+.PHONY : base64.s
+
+# target to generate assembly for a file
+base64.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/base64.cpp.s
+.PHONY : base64.cpp.s
+
+finger_algorithm.o: finger_algorithm.cpp.o
+.PHONY : finger_algorithm.o
+
+# target to build an object file
+finger_algorithm.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_algorithm.cpp.o
+.PHONY : finger_algorithm.cpp.o
+
+finger_algorithm.i: finger_algorithm.cpp.i
+.PHONY : finger_algorithm.i
+
+# target to preprocess a source file
+finger_algorithm.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_algorithm.cpp.i
+.PHONY : finger_algorithm.cpp.i
+
+finger_algorithm.s: finger_algorithm.cpp.s
+.PHONY : finger_algorithm.s
+
+# target to generate assembly for a file
+finger_algorithm.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_algorithm.cpp.s
+.PHONY : finger_algorithm.cpp.s
+
 finger_device.o: finger_device.cpp.o
 .PHONY : finger_device.o
 
@@ -165,6 +213,30 @@ finger_device.s: finger_device.cpp.s
 finger_device.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_device.cpp.s
 .PHONY : finger_device.cpp.s
+
+finger_test.o: finger_test.cpp.o
+.PHONY : finger_test.o
+
+# target to build an object file
+finger_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/finger_test.cpp.o
+.PHONY : finger_test.cpp.o
+
+finger_test.i: finger_test.cpp.i
+.PHONY : finger_test.i
+
+# target to preprocess a source file
+finger_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/finger_test.cpp.i
+.PHONY : finger_test.cpp.i
+
+finger_test.s: finger_test.cpp.s
+.PHONY : finger_test.s
+
+# target to generate assembly for a file
+finger_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/finger_test.cpp.s
+.PHONY : finger_test.cpp.s
 
 main.o: main.cpp.o
 .PHONY : main.o
@@ -190,30 +262,6 @@ main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/main.cpp.s
 .PHONY : main.cpp.s
 
-test.o: test.cpp.o
-.PHONY : test.o
-
-# target to build an object file
-test.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/test.cpp.o
-.PHONY : test.cpp.o
-
-test.i: test.cpp.i
-.PHONY : test.i
-
-# target to preprocess a source file
-test.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/test.cpp.i
-.PHONY : test.cpp.i
-
-test.s: test.cpp.s
-.PHONY : test.s
-
-# target to generate assembly for a file
-test.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_test.dir/build.make CMakeFiles/finger_test.dir/test.cpp.s
-.PHONY : test.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -224,15 +272,21 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... finger_cli"
 	@echo "... finger_test"
+	@echo "... base64.o"
+	@echo "... base64.i"
+	@echo "... base64.s"
+	@echo "... finger_algorithm.o"
+	@echo "... finger_algorithm.i"
+	@echo "... finger_algorithm.s"
 	@echo "... finger_device.o"
 	@echo "... finger_device.i"
 	@echo "... finger_device.s"
+	@echo "... finger_test.o"
+	@echo "... finger_test.i"
+	@echo "... finger_test.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... test.o"
-	@echo "... test.i"
-	@echo "... test.s"
 .PHONY : help
 
 

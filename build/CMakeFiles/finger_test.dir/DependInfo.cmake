@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/qingshan/workspace/front-end/finger-cli/test.cpp" "CMakeFiles/finger_test.dir/test.cpp.o" "gcc" "CMakeFiles/finger_test.dir/test.cpp.o.d"
+  "/home/qingshan/workspace/front-end/finger-cli/finger_test.cpp" "CMakeFiles/finger_test.dir/finger_test.cpp.o" "gcc" "CMakeFiles/finger_test.dir/finger_test.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

@@ -13,8 +13,20 @@
 },
 {
   "directory": "/home/qingshan/workspace/front-end/finger-cli/build",
-  "command": "/usr/bin/c++  -isystem /home/qingshan/vcpkg/installed/x64-linux/include -g -std=gnu++17 -o CMakeFiles/finger_test.dir/test.cpp.o -c /home/qingshan/workspace/front-end/finger-cli/test.cpp",
-  "file": "/home/qingshan/workspace/front-end/finger-cli/test.cpp",
-  "output": "CMakeFiles/finger_test.dir/test.cpp.o"
+  "command": "/usr/bin/c++  -isystem /home/qingshan/vcpkg/installed/x64-linux/include -g -std=gnu++17 -o CMakeFiles/finger_cli.dir/finger_algorithm.cpp.o -c /home/qingshan/workspace/front-end/finger-cli/finger_algorithm.cpp",
+  "file": "/home/qingshan/workspace/front-end/finger-cli/finger_algorithm.cpp",
+  "output": "CMakeFiles/finger_cli.dir/finger_algorithm.cpp.o"
+},
+{
+  "directory": "/home/qingshan/workspace/front-end/finger-cli/build",
+  "command": "/usr/bin/c++  -isystem /home/qingshan/vcpkg/installed/x64-linux/include -g -std=gnu++17 -o CMakeFiles/finger_cli.dir/base64.cpp.o -c /home/qingshan/workspace/front-end/finger-cli/base64.cpp",
+  "file": "/home/qingshan/workspace/front-end/finger-cli/base64.cpp",
+  "output": "CMakeFiles/finger_cli.dir/base64.cpp.o"
+},
+{
+  "directory": "/home/qingshan/workspace/front-end/finger-cli/build",
+  "command": "/usr/bin/c++   -g -std=gnu++17 -o CMakeFiles/finger_test.dir/finger_test.cpp.o -c /home/qingshan/workspace/front-end/finger-cli/finger_test.cpp",
+  "file": "/home/qingshan/workspace/front-end/finger-cli/finger_test.cpp",
+  "output": "CMakeFiles/finger_test.dir/finger_test.cpp.o"
 }
 ]

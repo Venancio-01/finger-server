@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -isystem /home/qingshan/vcpkg/installed/x64-linux/include
+CXX_INCLUDES = 
 
 CXX_FLAGS = -g -std=gnu++17
 
