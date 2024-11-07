@@ -117,24 +117,24 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named finger_cli
+# Target rules for targets named finger_server
 
 # Build rule for target.
-finger_cli: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 finger_cli
-.PHONY : finger_cli
+finger_server: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 finger_server
+.PHONY : finger_server
 
 # fast build rule for target.
-finger_cli/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/build
-.PHONY : finger_cli/fast
+finger_server/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/build
+.PHONY : finger_server/fast
 
 base64.o: base64.cpp.o
 .PHONY : base64.o
 
 # target to build an object file
 base64.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/base64.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/base64.cpp.o
 .PHONY : base64.cpp.o
 
 base64.i: base64.cpp.i
@@ -142,7 +142,7 @@ base64.i: base64.cpp.i
 
 # target to preprocess a source file
 base64.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/base64.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/base64.cpp.i
 .PHONY : base64.cpp.i
 
 base64.s: base64.cpp.s
@@ -150,7 +150,7 @@ base64.s: base64.cpp.s
 
 # target to generate assembly for a file
 base64.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/base64.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/base64.cpp.s
 .PHONY : base64.cpp.s
 
 finger_algorithm.o: finger_algorithm.cpp.o
@@ -158,7 +158,7 @@ finger_algorithm.o: finger_algorithm.cpp.o
 
 # target to build an object file
 finger_algorithm.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_algorithm.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/finger_algorithm.cpp.o
 .PHONY : finger_algorithm.cpp.o
 
 finger_algorithm.i: finger_algorithm.cpp.i
@@ -166,7 +166,7 @@ finger_algorithm.i: finger_algorithm.cpp.i
 
 # target to preprocess a source file
 finger_algorithm.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_algorithm.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/finger_algorithm.cpp.i
 .PHONY : finger_algorithm.cpp.i
 
 finger_algorithm.s: finger_algorithm.cpp.s
@@ -174,7 +174,7 @@ finger_algorithm.s: finger_algorithm.cpp.s
 
 # target to generate assembly for a file
 finger_algorithm.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_algorithm.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/finger_algorithm.cpp.s
 .PHONY : finger_algorithm.cpp.s
 
 finger_device.o: finger_device.cpp.o
@@ -182,7 +182,7 @@ finger_device.o: finger_device.cpp.o
 
 # target to build an object file
 finger_device.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_device.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/finger_device.cpp.o
 .PHONY : finger_device.cpp.o
 
 finger_device.i: finger_device.cpp.i
@@ -190,7 +190,7 @@ finger_device.i: finger_device.cpp.i
 
 # target to preprocess a source file
 finger_device.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_device.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/finger_device.cpp.i
 .PHONY : finger_device.cpp.i
 
 finger_device.s: finger_device.cpp.s
@@ -198,7 +198,7 @@ finger_device.s: finger_device.cpp.s
 
 # target to generate assembly for a file
 finger_device.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/finger_device.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/finger_device.cpp.s
 .PHONY : finger_device.cpp.s
 
 main.o: main.cpp.o
@@ -206,7 +206,7 @@ main.o: main.cpp.o
 
 # target to build an object file
 main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/main.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/main.cpp.o
 .PHONY : main.cpp.o
 
 main.i: main.cpp.i
@@ -214,7 +214,7 @@ main.i: main.cpp.i
 
 # target to preprocess a source file
 main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/main.cpp.i
 .PHONY : main.cpp.i
 
 main.s: main.cpp.s
@@ -222,7 +222,7 @@ main.s: main.cpp.s
 
 # target to generate assembly for a file
 main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_cli.dir/build.make CMakeFiles/finger_cli.dir/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/finger_server.dir/build.make CMakeFiles/finger_server.dir/main.cpp.s
 .PHONY : main.cpp.s
 
 # Help Target
@@ -233,7 +233,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... finger_cli"
+	@echo "... finger_server"
 	@echo "... base64.o"
 	@echo "... base64.i"
 	@echo "... base64.s"

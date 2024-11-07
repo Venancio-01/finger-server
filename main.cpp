@@ -1,234 +1,124 @@
+#include <cpprest/http_listener.h>
+#include <cpprest/json.h>
 #include "finger_device.h"
 #include "finger_algorithm.h"
 #include "base64.h"
 #include <iostream>
-#include <string>
-#include <nlohmann/json.hpp>
-#include <vector>
 #include <memory>
-#include <dlfcn.h>
 
-using json = nlohmann::json;
+using namespace web;
+using namespace web::http;
+using namespace web::http::experimental::listener;
 
-class CommandProcessor {
+class FingerServer {
 public:
-    CommandProcessor() : device_(nullptr), algorithmHandle_(nullptr) {}
+    FingerServer() : device_(nullptr), algorithmHandle_(nullptr) {
+        // 创建 HTTP 监听器
+        listener_ = http_listener(U("http://0.0.0.0:22813"));
+        
+        // 注册请求处理函数
+        listener_.support(methods::POST, std::bind(&FingerServer::handlePost, this, std::placeholders::_1));
+    }
     
-    void processCommand(const std::string& input) {
+    void start() {
         try {
-            auto command = json::parse(input);
-            std::string cmd = command["cmd"];
-            
-            json response;
-            // 初始化 SDK
-            if (cmd == "initialize") {
-                bool deviceInit = FingerDevice::initSDK();
-                bool algorithmInit = FingerAlgorithm::initSDK();
-                
-                bool success = deviceInit && algorithmInit;
-                if (success) {
-                    device_ = std::make_unique<FingerDevice>();
-                }
-                
-                response = {
-                    {"success", success},
-                    {"deviceInit", deviceInit},
-                    {"algorithmInit", algorithmInit}
-                };
-            }
-            // 打开设备并初始化算法
-            else if (cmd == "openDevice") {
-                if (!device_) {
-                    response = {
-                        {"success", false},
-                        {"error", "Device not initialized"}
-                    };
-                } else {
-                    bool success = device_->openDevice();
-                    int deviceCount = device_->getDeviceList().size();
-                    
-                    if (success) {
-                        // 获取设备参数
-                        int width = device_->getParameter(1);
-                        int height = device_->getParameter(2);
-                        
-                        // 检查 SDK 是否正确加载
-                        void* sdkHandle = dlopen("libzkfp.so", RTLD_LAZY);
-                        if (!sdkHandle) {
-                            success = false;
-                        } else {
-                            dlclose(sdkHandle);
-                        }
-                        
-                        algorithmHandle_ = FingerAlgorithm::initAlgorithm(0, width, height, nullptr);
-                        success = algorithmHandle_ != nullptr;
-                    }
-                    
-                    response = {
-                        {"success", success},
-                        {"error", success ? "" : "Failed to initialize algorithm"},
-                        {"debug_info", {
-                            {"device_count", deviceCount},
-                            {"device_connected", device_->isDeviceConnected()},
-                            {"width", device_->getParameter(1)},
-                            {"height", device_->getParameter(2)},
-                            {"algorithm_handle", algorithmHandle_ != nullptr}
-                        }}
-                    };
-                }
-            }
-            // 检查设备是否连接
-            else if (cmd == "isConnected") {
-                bool connected = device_ ? device_->isDeviceConnected() : false;
-                response = {
-                    {"success", true},
-                    {"connected", connected}
-                };
-            }
-            // 关闭设备
-            else if (cmd == "closeDevice") {
-                if (!device_) {
-                    response = {
-                        {"success", false},
-                        {"error", "Device not initialized"}
-                    };
-                } else {
-                    bool success = device_->closeDevice();
-                    if (success && algorithmHandle_) {
-                        // 关闭算法
-                        FingerAlgorithm::closeAlgorithm(algorithmHandle_);
-                        algorithmHandle_ = nullptr;
-                    }
-                    response = {
-                        {"success", success}
-                    };
-                }
-            }
-            // 添加指纹模板
-            else if (cmd == "addTemplate") {
-                if (!algorithmHandle_) {
-                    response = {
-                        {"success", false},
-                        {"error", "Algorithm not initialized"}
-                    };
-                } else {
-                    int id = command["id"];
-                    int length = command["length"];
-                    std::string dataBase64 = command["data"];
-                    std::vector<unsigned char> data = base64_decode(dataBase64);
-                    
-                    int result = FingerAlgorithm::addTemplateToDb(algorithmHandle_, id, length, data.data());
-                    response = {
-                        {"success", result == 1},
-                        {"result", result}
-                    };
-                }
-            }
-            // 识别指纹
-            else if (cmd == "identify") {
-                if (!algorithmHandle_) {
-                    response = {
-                        {"success", false},
-                        {"error", "Algorithm not initialized"}
-                    };
-                } else {
-                    std::string dataBase64 = command["data"];
-                    std::vector<unsigned char> data = base64_decode(dataBase64);
-                    int matchedId = 0;
-                    int score = 0;
-                    
-                    int result = FingerAlgorithm::identifyTemplate(algorithmHandle_, data.data(), &matchedId, &score);
-                    response = {
-                        {"success", result == 1},
-                        {"matchedId", matchedId},
-                        {"score", score}
-                    };
-                }
-            }
-            // 采集指纹图像
-            else if (cmd == "capture") {
-                if (!device_) {
-                    response = {
-                        {"success", false},
-                        {"error", "Device not initialized"}
-                    };
-                } else {
-                    // 获取设备参数
-                    int width = device_->getParameter(1);  // 1 表示宽度
-                    int height = device_->getParameter(2); // 2 表示高度
-                    if (width <= 0 || height <= 0) {
-                        response = {
-                            {"success", false},
-                            {"error", "Invalid device parameters"}
-                        };
-                    } else {
-                        std::vector<unsigned char> buffer(width * height);
-                        int result = device_->captureImage(buffer.data(), buffer.size());
-                        if (result > 0) {
-                            response = {
-                                {"success", true},
-                                {"width", width},
-                                {"height", height},
-                                {"data", base64_encode(buffer)}
-                            };
-                        } else {
-                            response = {
-                                {"success", false},
-                                {"error", "Capture failed"}
-                            };
-                        }
-                    }
-                }
-            }
-            // 销毁 SDK
-            else if (cmd == "uninitialize") {
-                if (algorithmHandle_) {
-                    FingerAlgorithm::closeAlgorithm(algorithmHandle_);
-                    algorithmHandle_ = nullptr;
-                }
-                if (device_) {
-                    device_->closeDevice();
-                    device_.reset();
-                }
-                FingerDevice::destroySDK();
-                FingerAlgorithm::destroySDK();
-                
-                response = {
-                    {"success", true}
-                };
-            }
-            
-            std::cout << response.dump() << std::endl;
-            
-        } catch (const std::exception& e) {
-            json error = {
-                {"success", false},
-                {"error", e.what()}
-            };
-            std::cout << error.dump() << std::endl;
+            listener_.open().wait();
+            std::cout << "指纹服务已启动，监听端口: 22813" << std::endl;
+        }
+        catch (const std::exception& e) {
+            std::cout << "服务启动失败: " << e.what() << std::endl;
         }
     }
-    ~CommandProcessor() {
-        if (algorithmHandle_) {
-            FingerAlgorithm::closeAlgorithm(algorithmHandle_);
-            algorithmHandle_ = nullptr;
-        }
-        FingerDevice::destroySDK();
-        FingerAlgorithm::destroySDK();
+    
+    void stop() {
+        listener_.close().wait();
     }
     
 private:
+    void handlePost(http_request request) {
+        try {
+            // 获取请求体
+            request.extract_json().then([this, request](json::value body) {
+                try {
+                    auto response = processCommand(body);
+                    http_response resp(status_codes::OK);
+                    resp.headers().add(U("Content-Type"), U("application/json"));
+                    resp.set_body(response);
+                    request.reply(resp);
+                }
+                catch (const std::exception& e) {
+                    json::value error;
+                    error[U("success")] = json::value::boolean(false);
+                    error[U("error")] = json::value::string(utility::conversions::to_string_t(e.what()));
+                    request.reply(status_codes::BadRequest, error);
+                }
+            }).wait();
+        }
+        catch (const std::exception& e) {
+            json::value error;
+            error[U("success")] = json::value::boolean(false);
+            error[U("error")] = json::value::string(utility::conversions::to_string_t(e.what()));
+            request.reply(status_codes::BadRequest, error);
+        }
+    }
+    
+    json::value processCommand(const json::value& body) {
+        auto cmd = utility::conversions::to_utf8string(body.at(U("cmd")).as_string());
+        json::value response;
+        
+        if (cmd == "init") {
+            bool deviceInit = FingerDevice::initSDK();
+            bool algorithmInit = FingerAlgorithm::initSDK();
+            
+            bool success = deviceInit && algorithmInit;
+            if (success) {
+                device_ = std::make_unique<FingerDevice>();
+            }
+            
+            response[U("success")] = json::value::boolean(success);
+            response[U("deviceInit")] = json::value::boolean(deviceInit);
+            response[U("algorithmInit")] = json::value::boolean(algorithmInit);
+        }
+        else if (cmd == "isConnected") {
+            bool isConnected = device_->isDeviceConnected();
+            response[U("success")] = json::value::boolean(isConnected);
+        }
+        else if (cmd == "openDevice") {
+            if (!device_) {
+                throw std::runtime_error("Device not initialized");
+            }
+            
+            bool success = device_->openDevice();
+            if (success) {
+                int width = device_->getParameter(1);
+                int height = device_->getParameter(2);
+                algorithmHandle_ = FingerAlgorithm::initAlgorithm(0, width, height, nullptr);
+                success = algorithmHandle_ != nullptr;
+            }
+            
+            response[U("success")] = json::value::boolean(success);
+            if (!success) {
+                response[U("error")] = json::value::string(U("Failed to initialize algorithm"));
+            }
+        }
+        
+        return response;
+    }
+    
+    http_listener listener_;
     std::unique_ptr<FingerDevice> device_;
     void* algorithmHandle_;
 };
 
 int main() {
-    CommandProcessor processor;
+    FingerServer server;
+    server.start();
+    
+    std::cout << "按 Enter 键退出..." << std::endl;
     std::string line;
+    std::getline(std::cin, line);
     
-    while (std::getline(std::cin, line)) {
-        processor.processCommand(line);
-    }
-    
+    server.stop();
     return 0;
 } 
+

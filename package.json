@@ -21,6 +21,7 @@
     "commander": "^11.1.0"
   },
   "devDependencies": {
+    "axios": "^1.6.2",
     "@types/node": "^16.0.0",
     "pkg": "^5.8.1",
     "typescript": "^5.0.0"

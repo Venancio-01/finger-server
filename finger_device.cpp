@@ -1,6 +1,6 @@
 #include "finger_device.h"
 #include <dlfcn.h>
-
+#include <iostream>
 // SDK 函数指针定义
 typedef int (*SensorEnumDevices)(DeviceInfo*, int);
 typedef void* (*SensorOpen)(DeviceInfo*);
@@ -54,6 +54,7 @@ bool FingerDevice::openDevice() {
         return false;
         
     deviceHandle_ = g_openDevice(&deviceList_[0]);
+    std::cout << "设备句柄: " << deviceHandle_ << std::endl;
     if (!deviceHandle_)
         return false;
         

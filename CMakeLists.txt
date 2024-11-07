@@ -1,6 +1,6 @@
 set(CMAKE_TOOLCHAIN_FILE "~/vcpkg/scripts/buildsystems/vcpkg.cmake")
 cmake_minimum_required(VERSION 3.10)
-project(finger_cli)
+project(finger_server)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,18 +11,19 @@ find_package(nlohmann_json REQUIRED)
 # 添加 pthread 库
 find_package(Threads REQUIRED)
 
-# 添加可执行文件
-add_executable(finger_cli
+# 添加 cpprestsdk 依赖
+find_package(cpprestsdk REQUIRED)
+
+add_executable(finger_server
     main.cpp
     finger_device.cpp
     finger_algorithm.cpp
     base64.cpp
 )
 
-# 链接依赖库
-target_link_libraries(finger_cli
+target_link_libraries(finger_server
     PRIVATE
+    cpprestsdk::cpprest
     nlohmann_json::nlohmann_json
-    ${CMAKE_THREAD_LIBS_INIT}
     dl
 )

@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -isystem /home/qingshan/vcpkg/installed/x64-linux/include
 
-CXX_FLAGS = -g -std=gnu++17
+CXX_FLAGS = -std=gnu++17
 
