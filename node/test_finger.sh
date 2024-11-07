@@ -8,7 +8,7 @@ NC='\033[0m'
 
 # 启动 finger-cli 程序
 echo -e "${YELLOW}启动指纹识别服务...${NC}"
-sudo npx ts-node src/index.ts > output.log 2>&1 &
+sudo $(which npx) ts-node src/index.ts > output.log 2>&1 &
 CLI_PID=$!
 
 # 等待程序启动
