@@ -83,6 +83,22 @@ private:
             bool isConnected = device_->isDeviceConnected();
             response[U("success")] = json::value::boolean(isConnected);
         }
+        else if (cmd == "getDeviceSize") {
+            if (!device_) {
+                throw std::runtime_error("Device not initialized");
+            }
+            
+            int width = device_->getParameter(1);
+            int height = device_->getParameter(2);
+            
+            if (width <= 0 || height <= 0) {
+                throw std::runtime_error("Invalid device parameters");
+            }
+            
+            response[U("success")] = json::value::boolean(true);
+            response[U("width")] = json::value::number(width);
+            response[U("height")] = json::value::number(height);
+        }
         else if (cmd == "openDevice") {
             if (!device_) {
                 throw std::runtime_error("Device not initialized");
@@ -114,6 +130,51 @@ private:
             
             response[U("success")] = json::value::boolean(success);
         }
+        else if (cmd == "loadTemplates") {
+            if (!algorithmHandle_) {
+                throw std::runtime_error("Algorithm not initialized");
+            }
+            
+            try {
+                auto templates = body.at(U("templates")).as_array();
+                bool hasError = false;
+                std::string errorMsg;
+
+                for (const auto& templ : templates) {
+                    int id = templ.at(U("id")).as_integer();
+                    std::string templateData = utility::conversions::to_utf8string(templ.at(U("template")).as_string());
+                    std::vector<unsigned char> templateBuffer = base64_decode(templateData);
+                    
+                    if (templateBuffer.empty()) {
+                        hasError = true;
+                        errorMsg = "Invalid template data for id " + std::to_string(id);
+                        break;
+                    }
+                    
+                    int result = FingerAlgorithm::addTemplateToDb(
+                        algorithmHandle_,
+                        id,
+                        templateBuffer.size(),
+                        templateBuffer.data()
+                    );
+                    
+                    if (result != 0) {
+                        hasError = true;
+                        errorMsg = "Failed to load template for id " + std::to_string(id);
+                        break;
+                    }
+                }
+                
+                response[U("success")] = json::value::boolean(!hasError);
+                if (hasError) {
+                    response[U("error")] = json::value::string(utility::conversions::to_string_t(errorMsg));
+                }
+            }
+            catch (const json::json_exception& e) {
+                response[U("success")] = json::value::boolean(false);
+                response[U("error")] = json::value::string(U("Invalid request parameters"));
+            }
+        }
         else if (cmd == "capture") {
             if (!device_ || !algorithmHandle_) {
                 throw std::runtime_error("Device or algorithm not initialized");
@@ -130,8 +191,6 @@ private:
             
             if (result > 0) {
                 response[U("success")] = json::value::boolean(true);
-                response[U("width")] = json::value::number(width);
-                response[U("height")] = json::value::number(height);
                 response[U("data")] = json::value::string(utility::conversions::to_string_t(base64_encode(buffer)));
             } else {
                 response[U("success")] = json::value::boolean(false);
