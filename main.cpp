@@ -208,7 +208,6 @@ public:
             std::cout << error.dump() << std::endl;
         }
     }
-    
     ~CommandProcessor() {
         if (algorithmHandle_) {
             FingerAlgorithm::closeAlgorithm(algorithmHandle_);

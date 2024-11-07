@@ -1,5 +1,28 @@
 {
+  "name": "finger-cli",
+  "version": "1.0.0",
+  "bin": {
+    "finger-cli": "./dist/index.js"
+  },
   "scripts": {
+    "build": "tsc",
+    "pkg": "pkg .",
     "test": "ts-node test/finger_test.ts"
+  },
+  "pkg": {
+    "scripts": "dist/**/*.js",
+    "targets": [
+      "node16-linux-x64",
+      "node16-win-x64"
+    ],
+    "outputPath": "bin"
+  },
+  "dependencies": {
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.0.0",
+    "pkg": "^5.8.1",
+    "typescript": "^5.0.0"
   }
 } 
