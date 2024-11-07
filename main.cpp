@@ -165,6 +165,11 @@ private:
             if (!success)
             {
                 response[U("error")] = json::value::string(U("Failed to initialize algorithm"));
+                std::cout << "设备打开失败" << std::endl;
+            }
+            else
+            {
+                std::cout << "设备打开成功" << std::endl;
             }
         }
         else if (cmd == "closeDevice")
@@ -179,6 +184,11 @@ private:
             {
                 FingerAlgorithm::closeAlgorithm(algorithmHandle_);
                 algorithmHandle_ = nullptr;
+                std::cout << "设备关闭成功" << std::endl;
+            }
+            else
+            {
+                std::cout << "设备关闭失败" << std::endl;
             }
 
             response[U("success")] = json::value::boolean(success);
