@@ -254,13 +254,23 @@ private:
                 throw std::runtime_error("Invalid device parameters");
             }
 
-            std::vector<unsigned char> buffer(width * height);
-            int result = device_->captureImage(buffer.data(), buffer.size());
+            std::vector<unsigned char> imageBuffer(width * height);
+            int result = device_->captureImage(imageBuffer.data(), imageBuffer.size());
 
             if (result > 0)
             {
-                response[U("success")] = json::value::boolean(true);
-                response[U("data")] = json::value::string(utility::conversions::to_string_t(base64_encode(buffer)));
+                std::vector<unsigned char> templateBuffer(2048);
+                int templateLength = FingerAlgorithm::extractTemplate(algorithmHandle_, imageBuffer.data(), width, height, templateBuffer.data(), templateBuffer.size(), 0);
+                if (templateLength > 0)
+                {
+                    response[U("success")] = json::value::boolean(true);
+                    response[U("template")] = json::value::string(utility::conversions::to_string_t(base64_encode(templateBuffer)));
+                }
+                else
+                {
+                    response[U("success")] = json::value::boolean(false);
+                    response[U("error")] = json::value::string(U("Feature extraction failed"));
+                }
             }
             else
             {
@@ -268,42 +278,42 @@ private:
                 response[U("error")] = json::value::string(U("Capture failed"));
             }
         }
-        else if (cmd == "extract")
-        {
-            if (!device_ || !algorithmHandle_)
-            {
-                throw std::runtime_error("Device or algorithm not initialized");
-            }
+        // else if (cmd == "extract")
+        // {
+        //     if (!device_ || !algorithmHandle_)
+        //     {
+        //         throw std::runtime_error("Device or algorithm not initialized");
+        //     }
 
-            // 获取图像数据
-            auto imageData = body.at(U("imageData")).as_string();
-            auto imageBuffer = base64_decode(utility::conversions::to_utf8string(imageData));
+        //     // 获取图像数据
+        //     auto imageData = body.at(U("imageData")).as_string();
+        //     auto imageBuffer = base64_decode(utility::conversions::to_utf8string(imageData));
 
-            int width = device_->getParameter(1);
-            int height = device_->getParameter(2);
+        //     int width = device_->getParameter(1);
+        //     int height = device_->getParameter(2);
 
-            // 提取特征
-            std::vector<unsigned char> templateBuffer(2048);
-            int result = FingerAlgorithm::extractTemplate(
-                algorithmHandle_,
-                imageBuffer.data(),
-                width,
-                height,
-                templateBuffer.data(),
-                templateBuffer.size(),
-                0);
+        //     // 提取特征
+        //     std::vector<unsigned char> templateBuffer(2048);
+        //     int result = FingerAlgorithm::extractTemplate(
+        //         algorithmHandle_,
+        //         imageBuffer.data(),
+        //         width,
+        //         height,
+        //         templateBuffer.data(),
+        //         templateBuffer.size(),
+        //         0);
 
-            if (result > 0)
-            {
-                response[U("success")] = json::value::boolean(true);
-                response[U("template")] = json::value::string(utility::conversions::to_string_t(base64_encode(templateBuffer)));
-            }
-            else
-            {
-                response[U("success")] = json::value::boolean(false);
-                response[U("error")] = json::value::string(U("Feature extraction failed"));
-            }
-        }
+        //     if (result > 0)
+        //     {
+        //         response[U("success")] = json::value::boolean(true);
+        //         response[U("template")] = json::value::string(utility::conversions::to_string_t(base64_encode(templateBuffer)));
+        //     }
+        //     else
+        //     {
+        //         response[U("success")] = json::value::boolean(false);
+        //         response[U("error")] = json::value::string(U("Feature extraction failed"));
+        //     }
+        // }
         else if (cmd == "register")
         {
             if (!device_ || !algorithmHandle_)
