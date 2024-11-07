@@ -5,6 +5,7 @@
 
 # 编译输出
 target/
+build/
 dist/
 *.class
 *.jar
