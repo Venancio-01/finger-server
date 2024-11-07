@@ -185,10 +185,10 @@ private:
         }
         else if (cmd == "loadTemplates")
         {
-            if (!algorithmHandle_)
-            {
-                throw std::runtime_error("Algorithm not initialized");
-            }
+            // if (!algorithmHandle_)
+            // {
+            //     throw std::runtime_error("Algorithm not initialized");
+            // }
 
             try
             {
@@ -359,7 +359,7 @@ private:
             }
 
             // 从请求中获取指纹模板数据
-            auto templateData = body.at(U("templateData")).as_string();
+            auto templateData = body.at(U("template")).as_string();
             std::vector<unsigned char> fingerTemplate = base64_decode(utility::conversions::to_utf8string(templateData));
 
             // 识别指纹
