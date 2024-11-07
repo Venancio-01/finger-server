@@ -185,11 +185,6 @@ private:
         }
         else if (cmd == "loadTemplates")
         {
-            // if (!algorithmHandle_)
-            // {
-            //     throw std::runtime_error("Algorithm not initialized");
-            // }
-
             try
             {
                 auto templates = body.at(U("templates")).as_array();
@@ -261,6 +256,42 @@ private:
             {
                 response[U("success")] = json::value::boolean(false);
                 response[U("error")] = json::value::string(U("Capture failed"));
+            }
+        }
+        else if (cmd == "extract")
+        {
+            if (!device_ || !algorithmHandle_)
+            {
+                throw std::runtime_error("Device or algorithm not initialized");
+            }
+
+            // 获取图像数据
+            auto imageData = body.at(U("imageData")).as_string();
+            auto imageBuffer = base64_decode(utility::conversions::to_utf8string(imageData));
+
+            int width = device_->getParameter(1);
+            int height = device_->getParameter(2);
+
+            // 提取特征
+            std::vector<unsigned char> templateBuffer(2048);
+            int result = FingerAlgorithm::extractTemplate(
+                algorithmHandle_,
+                imageBuffer.data(),
+                width,
+                height,
+                templateBuffer.data(),
+                templateBuffer.size(),
+                0);
+
+            if (result > 0)
+            {
+                response[U("success")] = json::value::boolean(true);
+                response[U("template")] = json::value::string(utility::conversions::to_string_t(base64_encode(templateBuffer)));
+            }
+            else
+            {
+                response[U("success")] = json::value::boolean(false);
+                response[U("error")] = json::value::string(U("Feature extraction failed"));
             }
         }
         else if (cmd == "register")
@@ -373,7 +404,6 @@ private:
 
             response[U("success")] = json::value::boolean(identifyResult == 1);
             response[U("matchedId")] = json::value::number(matchedId);
-            response[U("score")] = json::value::number(score);
         }
         else
         {
