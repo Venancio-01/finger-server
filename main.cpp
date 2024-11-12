@@ -117,298 +117,197 @@ private:
         }
     }
 
-    json::value processCommand(const json::value &body)
-    {
+    json::value processCommand(const json::value& body) {
         auto cmd = utility::conversions::to_utf8string(body.at(U("cmd")).as_string());
+        std::cout << "\n收到命令: " << cmd << std::endl;
         json::value response;
 
-        if (cmd == "isConnected")
-        {
+        if (cmd == "isConnected") {
             bool isConnected = device_->isDeviceConnected();
             response[U("success")] = json::value::boolean(isConnected);
         }
-        else if (cmd == "openDevice")
-        {
-            if (!device_)
-            {
+        else if (cmd == "openDevice") {
+            if (!device_) {
+                std::cout << "错误: 设备未初始化" << std::endl;
                 throw std::runtime_error("Device not initialized");
             }
 
             bool success = device_->openDevice();
-            if (success)
-            {
-                int width = device_->getParameter(1);
-                int height = device_->getParameter(2);
+            if (success) {
+                int width = device_->getParameter(1);  // 1=宽度
+                int height = device_->getParameter(2); // 2=高度
+                std::cout << "设备参数 - 宽度: " << width << ", 高度: " << height << std::endl;
+
                 algorithmHandle_ = FingerAlgorithm::initAlgorithm(0, width, height, nullptr);
                 success = algorithmHandle_ != nullptr;
             }
 
             response[U("success")] = json::value::boolean(success);
-            if (!success)
-            {
-                response[U("error")] = json::value::string(U("Failed to initialize algorithm"));
-                std::cout << "设备打开失败" << std::endl;
-            }
-            else
-            {
-                std::cout << "设备打开成功" << std::endl;
+            if (!success) {
+                response[U("error")] = json::value::string(U("Failed to initialize device or algorithm"));
             }
         }
-        else if (cmd == "closeDevice")
-        {
-            if (!device_)
-            {
-                throw std::runtime_error("Device not initialized");
-            }
-
-            bool success = device_->closeDevice();
-            if (success && algorithmHandle_)
-            {
-                FingerAlgorithm::closeAlgorithm(algorithmHandle_);
-                algorithmHandle_ = nullptr;
-                std::cout << "设备关闭成功" << std::endl;
-            }
-            else
-            {
-                std::cout << "设备关闭失败" << std::endl;
-            }
-
-            response[U("success")] = json::value::boolean(success);
-        }
-        else if (cmd == "loadTemplates")
-        {
-            std::cout << "加载模板" << std::endl;
-            try
-            {
-                auto templates = body.at(U("templates")).as_array();
-                std::cout << "模板数据数组大小: " << templates.size() << std::endl;
-                bool hasError = false;
-                std::string errorMsg;
-
-                for (const auto &templ : templates)
-                {
-                    int id = templ.at(U("id")).as_integer();
-                    std::cout << "模板ID: " << id << std::endl;
-
-                    std::string templateData = utility::conversions::to_utf8string(templ.at(U("template")).as_string());
-                    std::cout << "模板数据: " << templateData << std::endl;
-                    std::vector<unsigned char> templateBuffer = base64_decode(templateData);
-                    std::cout << "模板数据大小: " << templateBuffer.size() << std::endl;
-                    std::cout << "模板数据内容: ";
-                    for(const auto& byte : templateBuffer) {
-                        std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << " ";
-                    }
-                    std::cout << std::dec << std::endl;
-
-                    if (templateBuffer.empty())
-                    {
-                        hasError = true;
-                        errorMsg = "Invalid template data for id " + std::to_string(id);
-                        break;
-                    }
-
-                    int result = FingerAlgorithm::addTemplateToDb(
-                        algorithmHandle_,
-                        id,
-                        templateBuffer.size(),
-                        templateBuffer.data());
-
-                    std::cout << "加载模板结果: " << result << std::endl;
-                    if (result <= 0)
-                    {
-                        hasError = true;
-                        errorMsg = "Failed to load template for id " + std::to_string(id);
-                        break;
-                    }
-                }
-
-                response[U("success")] = json::value::boolean(!hasError);
-                std::cout << "加载模板结果: " << (hasError ? "失败" : "成功") << std::endl;
-                if (hasError)
-                {
-                    response[U("error")] = json::value::string(utility::conversions::to_string_t(errorMsg));
-                }
-            }
-            catch (const json::json_exception &e)
-            {
-                response[U("success")] = json::value::boolean(false);
-                response[U("error")] = json::value::string(U("Invalid request parameters"));
-            }
-        }
-        else if (cmd == "capture")
-        {
-            if (!device_ || !algorithmHandle_)
-            {
+        else if (cmd == "capture") {
+            if (!device_ || !algorithmHandle_) {
+                std::cout << "错误: 设备或算法未初始化" << std::endl;
                 throw std::runtime_error("Device or algorithm not initialized");
             }
 
             int width = device_->getParameter(1);
             int height = device_->getParameter(2);
-            if (width <= 0 || height <= 0)
-            {
-                throw std::runtime_error("Invalid device parameters");
-            }
+            std::cout << "开始采集指纹图像 (分辨率: " << width << "x" << height << ")" << std::endl;
 
             std::vector<unsigned char> imageBuffer(width * height);
-            int result = device_->captureImage(imageBuffer.data(), imageBuffer.size());
+            int captureResult = device_->captureImage(imageBuffer.data(), imageBuffer.size());
 
-            if (result > 0)
-            {
-                std::vector<unsigned char> templateBuffer(2048);
-                int templateLength = FingerAlgorithm::extractTemplate(algorithmHandle_, imageBuffer.data(), width, height, templateBuffer.data(), templateBuffer.size(), 0);
-                if (templateLength > 0)
-                {
+            if (captureResult > 0) {
+                std::vector<unsigned char> templateBuffer(2048);  // 按文档建议分配 2048 字节
+                int templateLength = FingerAlgorithm::extractTemplate(
+                    algorithmHandle_,
+                    imageBuffer.data(),
+                    width,
+                    height,
+                    templateBuffer.data(),
+                    templateBuffer.size(),
+                    0  // flag 固定为 0
+                );
+
+                if (templateLength > 0) {
                     response[U("success")] = json::value::boolean(true);
-                    response[U("template")] = json::value::string(utility::conversions::to_string_t(base64_encode(templateBuffer)));
-                }
-                else
-                {
+                    response[U("template")] = json::value::string(
+                        utility::conversions::to_string_t(base64_encode(templateBuffer)));
+                    response[U("length")] = json::value::number(templateLength);
+                } else {
                     response[U("success")] = json::value::boolean(false);
                     response[U("error")] = json::value::string(U("Feature extraction failed"));
                 }
-            }
-            else
-            {
+            } else {
                 response[U("success")] = json::value::boolean(false);
                 response[U("error")] = json::value::string(U("Capture failed"));
             }
         }
-        else if (cmd == "register")
-        {
-            std::cout << "注册指纹" << std::endl;
-            if (!device_ || !algorithmHandle_)
-            {
-                throw std::runtime_error("Device or algorithm not initialized");
+        else if (cmd == "verify") {
+            if (!algorithmHandle_) {
+                std::cout << "错误: 算法未初始化" << std::endl;
+                throw std::runtime_error("Algorithm not initialized");
             }
 
-            // 获取指纹模板数据数组
+            auto templateData1 = body.at(U("templateData1")).as_string();
+            auto templateData2 = body.at(U("templateData2")).as_string();
+
+            std::vector<unsigned char> fingerTemplate1 = base64_decode(
+                utility::conversions::to_utf8string(templateData1));
+            std::vector<unsigned char> fingerTemplate2 = base64_decode(
+                utility::conversions::to_utf8string(templateData2));
+
+            int score = FingerAlgorithm::verifyTemplate(
+                algorithmHandle_,
+                fingerTemplate1.data(),
+                fingerTemplate2.data());
+
+            bool matched = score >= 50;  // 按文档推荐阈值
+            response[U("success")] = json::value::boolean(matched);
+            response[U("score")] = json::value::number(score);
+        }
+        else if (cmd == "identify") {
+            if (!algorithmHandle_) {
+                std::cout << "错误: 算法未初始化" << std::endl;
+                throw std::runtime_error("Algorithm not initialized");
+            }
+
+            auto templateData = body.at(U("template")).as_string();
+            std::vector<unsigned char> fingerTemplate = base64_decode(
+                utility::conversions::to_utf8string(templateData));
+
+            int matchedId = 0;
+            int score = 0;
+            int result = FingerAlgorithm::identifyTemplate(
+                algorithmHandle_,
+                fingerTemplate.data(),
+                &matchedId,
+                &score);
+
+            response[U("success")] = json::value::boolean(result == 1);
+            response[U("matchedId")] = json::value::number(matchedId);
+            response[U("score")] = json::value::number(score);
+            // 添加阈值提示
+            response[U("threshold")] = json::value::number(70);  // 文档推荐阈值
+        }
+        else if (cmd == "register") {
+            if (!algorithmHandle_) {
+                std::cout << "错误: 算法未初始化" << std::endl;
+                throw std::runtime_error("Algorithm not initialized");
+            }
+
             auto fingerId = body.at(U("fingerId")).as_integer();
-            std::cout << "指纹ID: " << fingerId << std::endl;
             auto templateDataArray = body.at(U("templateData")).as_array();
-            std::cout << "模板数据数组大小: " << templateDataArray.size() << std::endl;
 
-            if (templateDataArray.size() == 0)
-            {
-                response[U("success")] = json::value::boolean(false);
-                response[U("error")] = json::value::string(U("Empty template data array"));
-                return response;
-            }
-
-            // 解码所有指纹模板
             std::vector<std::vector<unsigned char>> fingerTemplates;
-            for (const auto &templateData : templateDataArray)
-            {
+            std::vector<unsigned char*> templatePtrs;
+
+            for (const auto& templateData : templateDataArray) {
                 auto templateStr = templateData.as_string();
-                fingerTemplates.push_back(base64_decode(utility::conversions::to_utf8string(templateStr)));
-                std::cout << "模板数据大小: " << fingerTemplates.back().size() << std::endl;
-                std::cout << "模板数据内容: ";
-                for(const auto& byte : fingerTemplates.back()) {
-                    std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << " ";
-                }
-                std::cout << std::dec << std::endl;
+                fingerTemplates.push_back(base64_decode(
+                    utility::conversions::to_utf8string(templateStr)));
+                templatePtrs.push_back(fingerTemplates.back().data());
             }
 
-            // 准备指纹模板指针数组
-            std::vector<unsigned char *> templatePtrs;
-            for (auto &fingerTemplate : fingerTemplates)
-            {
-                templatePtrs.push_back(fingerTemplate.data());
-            }
-
-            // 生成最终模板
-            std::vector<unsigned char> finalTemplate(2048);
+            std::vector<unsigned char> finalTemplate(2048);  // 按文档建议分配 2048 字节
             int genResult = FingerAlgorithm::generateTemplate(
                 algorithmHandle_,
                 templatePtrs.data(),
                 templatePtrs.size(),
                 finalTemplate.data());
 
-            if (genResult <= 0)
-            {
+            if (genResult > 0) {
+                int addResult = FingerAlgorithm::addTemplateToDb(
+                    algorithmHandle_,
+                    fingerId,
+                    genResult,
+                    finalTemplate.data());
+
+                if (addResult > 0) {
+                    response[U("success")] = json::value::boolean(true);
+                    response[U("templateData")] = json::value::string(
+                        utility::conversions::to_string_t(base64_encode(finalTemplate)));
+                } else {
+                    response[U("success")] = json::value::boolean(false);
+                    response[U("error")] = json::value::string(U("Failed to add template to database"));
+                }
+            } else {
                 response[U("success")] = json::value::boolean(false);
-                response[U("error")] = json::value::string(U("Failed to generate final template"));
-                return response;
+                response[U("error")] = json::value::string(U("Failed to generate template"));
             }
-
-            // 添加到数据库
-            int addResult = FingerAlgorithm::addTemplateToDb(
-                algorithmHandle_,
-                fingerId,
-                genResult,
-                finalTemplate.data());
-
-            if (addResult != 1)
-            {
-                std::cout << "添加模板到数据库失败，错误码: " << addResult << std::endl;
-                response[U("success")] = json::value::boolean(false);
-                response[U("error")] = json::value::string(U("Failed to add template to database"));
-                return response;
-            }
-
-            std::cout << "成功添加模板到数据库" << std::endl;
-            response[U("success")] = json::value::boolean(true);
-            response[U("templateData")] = json::value::string(
-                utility::conversions::to_string_t(base64_encode(finalTemplate)));
-        }
-        else if (cmd == "verify")
-        {
-            if (!algorithmHandle_)
-            {
-                throw std::runtime_error("Algorithm not initialized");
-            }
-
-            // 从请求中获取两个指纹模板数据
-            auto templateData1 = body.at(U("templateData1")).as_string();
-            auto templateData2 = body.at(U("templateData2")).as_string();
-
-            std::vector<unsigned char> fingerTemplate1 = base64_decode(utility::conversions::to_utf8string(templateData1));
-            std::vector<unsigned char> fingerTemplate2 = base64_decode(utility::conversions::to_utf8string(templateData2));
-
-            // 比对两个指纹
-            int score = FingerAlgorithm::verifyTemplate(
-                algorithmHandle_,
-                fingerTemplate1.data(),
-                fingerTemplate2.data());
-
-            // 分数超过50认为比对成功
-            bool matched = score >= 50;
-            response[U("success")] = json::value::boolean(matched);
-            response[U("score")] = json::value::number(score);
         }
         else if (cmd == "identify")
         {
-            std::cout << "识别指纹" << std::endl;
-            if (!algorithmHandle_)
-            {
+            if (!algorithmHandle_) {
+                std::cout << "错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
 
-            // 从请求中获取指纹模板数据
             auto templateData = body.at(U("template")).as_string();
-            std::vector<unsigned char> fingerTemplate = base64_decode(utility::conversions::to_utf8string(templateData));
-            std::cout << "指纹模板数据大小: " << fingerTemplate.size() << std::endl;
+            std::vector<unsigned char> fingerTemplate = base64_decode(
+                utility::conversions::to_utf8string(templateData));
 
-            // 识别指纹
             int matchedId = 0;
             int score = 0;
-            int identifyResult = FingerAlgorithm::identifyTemplate(
+            int result = FingerAlgorithm::identifyTemplate(
                 algorithmHandle_,
                 fingerTemplate.data(),
                 &matchedId,
                 &score);
 
-            std::cout << "匹配的ID: " << matchedId << std::endl;
-            std::cout << "匹配分数: " << score << std::endl;
-
-            response[U("success")] = json::value::boolean(identifyResult == 1);
-            std::cout << "识别结果: " << (identifyResult == 1 ? "成功" : "失败") << std::endl;
+            response[U("success")] = json::value::boolean(result == 1);
             response[U("matchedId")] = json::value::number(matchedId);
+            response[U("score")] = json::value::number(score);
         }
-        else
-        {
+        else {
+            std::cout << "错误: 未知命令 " << cmd << std::endl;
             throw std::runtime_error("Unknown command");
         }
 
+        std::cout << "命令执行完成，返回结果: " << response.serialize() << std::endl;
         return response;
     }
 
