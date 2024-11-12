@@ -5,6 +5,7 @@
 #include "base64.h"
 #include <iostream>
 #include <memory>
+#include <iomanip>
 
 using namespace web;
 using namespace web::http;
@@ -189,6 +190,12 @@ private:
                     int id = templ.at(U("id")).as_integer();
                     std::string templateData = utility::conversions::to_utf8string(templ.at(U("template")).as_string());
                     std::vector<unsigned char> templateBuffer = base64_decode(templateData);
+                    std::cout << "模板数据大小: " << templateBuffer.size() << std::endl;
+                    std::cout << "模板数据内容: ";
+                    for(const auto& byte : templateBuffer) {
+                        std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << " ";
+                    }
+                    std::cout << std::dec << std::endl;
 
                     if (templateBuffer.empty())
                     {
