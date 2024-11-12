@@ -30,7 +30,7 @@ public:
     // score: 推荐阈值 70
     static int identifyTemplate(void* handle, unsigned char* data, int* id, int* score);
     
-    // 1:1 验证，返回值为分数(0~1000)
+    // 1:1 验证，返回值��分数(0~100)
     // 推荐阈值 50
     static int verifyTemplate(void* handle, unsigned char* templ1, unsigned char* templ2);
     
@@ -45,6 +45,9 @@ public:
     // output: 建议分配 2048 字节
     static int generateTemplate(void* handle, unsigned char** templates, int count, 
                               unsigned char* output);
+    
+    // 获取数据库中的模板数量
+    static int getTemplateCount(void* handle);
     
 private:
     static void* g_algorithmSDK;

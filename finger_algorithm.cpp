@@ -140,3 +140,9 @@ int FingerAlgorithm::generateTemplate(void* handle, unsigned char** templates, i
     std::cout << "生成注册模板结果: " << (result > 0 ? "成功" : "失败") << std::endl;
     return result;  // >0 表示成功，返回模板长度
 }
+
+int FingerAlgorithm::getTemplateCount(void* handle) {
+    int count = g_dbCount(handle);
+    std::cout << "当前数据库模板数量: " << count << std::endl;
+    return count;
+}

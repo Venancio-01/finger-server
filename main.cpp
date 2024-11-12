@@ -117,23 +117,28 @@ private:
         }
     }
 
-    json::value processCommand(const json::value& body) {
+    json::value processCommand(const json::value &body)
+    {
         auto cmd = utility::conversions::to_utf8string(body.at(U("cmd")).as_string());
         std::cout << "\n收到命令: " << cmd << std::endl;
         json::value response;
 
-        if (cmd == "isConnected") {
+        if (cmd == "isConnected")
+        {
             bool isConnected = device_->isDeviceConnected();
             response[U("success")] = json::value::boolean(isConnected);
         }
-        else if (cmd == "openDevice") {
-            if (!device_) {
+        else if (cmd == "openDevice")
+        {
+            if (!device_)
+            {
                 std::cout << "错误: 设备未初始化" << std::endl;
                 throw std::runtime_error("Device not initialized");
             }
 
             bool success = device_->openDevice();
-            if (success) {
+            if (success)
+            {
                 int width = device_->getParameter(1);  // 1=宽度
                 int height = device_->getParameter(2); // 2=高度
                 std::cout << "设备参数 - 宽度: " << width << ", 高度: " << height << std::endl;
@@ -143,12 +148,110 @@ private:
             }
 
             response[U("success")] = json::value::boolean(success);
-            if (!success) {
+            if (!success)
+            {
                 response[U("error")] = json::value::string(U("Failed to initialize device or algorithm"));
             }
         }
-        else if (cmd == "capture") {
-            if (!device_ || !algorithmHandle_) {
+        else if (cmd == "closeDevice")
+        {
+            if (!device_)
+            {
+                std::cout << "错误: 设备未初始化" << std::endl;
+                throw std::runtime_error("Device not initialized");
+            }
+
+            bool success = device_->closeDevice();
+            if (success && algorithmHandle_)
+            {
+                FingerAlgorithm::closeAlgorithm(algorithmHandle_);
+                algorithmHandle_ = nullptr;
+            }
+
+            response[U("success")] = json::value::boolean(success);
+            if (!success)
+            {
+                response[U("error")] = json::value::string(U("Failed to close device"));
+            }
+        }
+        else if (cmd == "loadTemplates")
+        {
+            if (!algorithmHandle_) {
+                std::cout << "错误: 算法未初始化" << std::endl;
+                throw std::runtime_error("Algorithm not initialized");
+            }
+
+            std::cout << "开始加载模板到内存数据库..." << std::endl;
+            try {
+                auto templates = body.at(U("templates")).as_array();
+                std::cout << "需要加载的模板数量: " << templates.size() << std::endl;
+                bool hasError = false;
+                std::string errorMsg;
+
+                // 先清空数据库
+                int clearResult = FingerAlgorithm::clearTemplateDb(algorithmHandle_);
+                if (clearResult != 1) {
+                    response[U("success")] = json::value::boolean(false);
+                    response[U("error")] = json::value::string(U("Failed to clear template database"));
+                    return response;
+                }
+                std::cout << "清空数据库成功" << std::endl;
+
+                for (const auto& templ : templates) {
+                    int id = templ.at(U("id")).as_integer();
+                    if (id <= 0) {
+                        hasError = true;
+                        errorMsg = "Invalid template ID: " + std::to_string(id) + " (must be > 0)";
+                        break;
+                    }
+                    std::cout << "正在加载模板 ID: " << id << std::endl;
+
+                    std::string templateData = utility::conversions::to_utf8string(templ.at(U("template")).as_string());
+                    std::vector<unsigned char> templateBuffer = base64_decode(templateData);
+
+                    if (templateBuffer.empty() || templateBuffer.size() > 2048) {  // 根据文档，模板大小不超过 1664 字节
+                        hasError = true;
+                        errorMsg = "Invalid template data size for ID " + std::to_string(id);
+                        break;
+                    }
+
+                    // 添加到数据库，返回值 >0 表示成功
+                    int result = FingerAlgorithm::addTemplateToDb(
+                        algorithmHandle_,
+                        id,
+                        templateBuffer.size(),
+                        templateBuffer.data());
+
+                    if (result <= 0) {
+                        hasError = true;
+                        errorMsg = "Failed to load template for ID " + std::to_string(id);
+                        break;
+                    }
+                    std::cout << "模板 " << id << " 加载成功" << std::endl;
+                }
+
+                if (!hasError) {
+                    // 获取已加载的模板数量
+                    int count = FingerAlgorithm::getTemplateCount(algorithmHandle_);
+                    std::cout << "模板加载完成，当前数据库中共有 " << count << " 个模板" << std::endl;
+                }
+
+                response[U("success")] = json::value::boolean(!hasError);
+                if (hasError) {
+                    response[U("error")] = json::value::string(utility::conversions::to_string_t(errorMsg));
+                    std::cout << "加载失败: " << errorMsg << std::endl;
+                }
+            }
+            catch (const json::json_exception& e) {
+                std::cout << "请求参数错误: " << e.what() << std::endl;
+                response[U("success")] = json::value::boolean(false);
+                response[U("error")] = json::value::string(U("Invalid request parameters"));
+            }
+        }
+        else if (cmd == "capture")
+        {
+            if (!device_ || !algorithmHandle_)
+            {
                 std::cout << "错误: 设备或算法未初始化" << std::endl;
                 throw std::runtime_error("Device or algorithm not initialized");
             }
@@ -160,8 +263,9 @@ private:
             std::vector<unsigned char> imageBuffer(width * height);
             int captureResult = device_->captureImage(imageBuffer.data(), imageBuffer.size());
 
-            if (captureResult > 0) {
-                std::vector<unsigned char> templateBuffer(2048);  // 按文档建议分配 2048 字节
+            if (captureResult > 0)
+            {
+                std::vector<unsigned char> templateBuffer(2048); // 按文档建议分配 2048 字节
                 int templateLength = FingerAlgorithm::extractTemplate(
                     algorithmHandle_,
                     imageBuffer.data(),
@@ -169,25 +273,32 @@ private:
                     height,
                     templateBuffer.data(),
                     templateBuffer.size(),
-                    0  // flag 固定为 0
+                    0 // flag 固定为 0
                 );
 
-                if (templateLength > 0) {
+                if (templateLength > 0)
+                {
                     response[U("success")] = json::value::boolean(true);
                     response[U("template")] = json::value::string(
                         utility::conversions::to_string_t(base64_encode(templateBuffer)));
                     response[U("length")] = json::value::number(templateLength);
-                } else {
+                }
+                else
+                {
                     response[U("success")] = json::value::boolean(false);
                     response[U("error")] = json::value::string(U("Feature extraction failed"));
                 }
-            } else {
+            }
+            else
+            {
                 response[U("success")] = json::value::boolean(false);
                 response[U("error")] = json::value::string(U("Capture failed"));
             }
         }
-        else if (cmd == "verify") {
-            if (!algorithmHandle_) {
+        else if (cmd == "verify")
+        {
+            if (!algorithmHandle_)
+            {
                 std::cout << "错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
@@ -205,12 +316,14 @@ private:
                 fingerTemplate1.data(),
                 fingerTemplate2.data());
 
-            bool matched = score >= 50;  // 按文档推荐阈值
+            bool matched = score >= 50; // 按文档推荐阈值
             response[U("success")] = json::value::boolean(matched);
             response[U("score")] = json::value::number(score);
         }
-        else if (cmd == "identify") {
-            if (!algorithmHandle_) {
+        else if (cmd == "identify")
+        {
+            if (!algorithmHandle_)
+            {
                 std::cout << "错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
@@ -231,10 +344,12 @@ private:
             response[U("matchedId")] = json::value::number(matchedId);
             response[U("score")] = json::value::number(score);
             // 添加阈值提示
-            response[U("threshold")] = json::value::number(70);  // 文档推荐阈值
+            response[U("threshold")] = json::value::number(70); // 文档推荐阈值
         }
-        else if (cmd == "register") {
-            if (!algorithmHandle_) {
+        else if (cmd == "register")
+        {
+            if (!algorithmHandle_)
+            {
                 std::cout << "错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
@@ -243,45 +358,53 @@ private:
             auto templateDataArray = body.at(U("templateData")).as_array();
 
             std::vector<std::vector<unsigned char>> fingerTemplates;
-            std::vector<unsigned char*> templatePtrs;
+            std::vector<unsigned char *> templatePtrs;
 
-            for (const auto& templateData : templateDataArray) {
+            for (const auto &templateData : templateDataArray)
+            {
                 auto templateStr = templateData.as_string();
                 fingerTemplates.push_back(base64_decode(
                     utility::conversions::to_utf8string(templateStr)));
                 templatePtrs.push_back(fingerTemplates.back().data());
             }
 
-            std::vector<unsigned char> finalTemplate(2048);  // 按文档建议分配 2048 字节
+            std::vector<unsigned char> finalTemplate(2048); // 按文档建议分配 2048 字节
             int genResult = FingerAlgorithm::generateTemplate(
                 algorithmHandle_,
                 templatePtrs.data(),
                 templatePtrs.size(),
                 finalTemplate.data());
 
-            if (genResult > 0) {
+            if (genResult > 0)
+            {
                 int addResult = FingerAlgorithm::addTemplateToDb(
                     algorithmHandle_,
                     fingerId,
                     genResult,
                     finalTemplate.data());
 
-                if (addResult > 0) {
+                if (addResult > 0)
+                {
                     response[U("success")] = json::value::boolean(true);
                     response[U("templateData")] = json::value::string(
                         utility::conversions::to_string_t(base64_encode(finalTemplate)));
-                } else {
+                }
+                else
+                {
                     response[U("success")] = json::value::boolean(false);
                     response[U("error")] = json::value::string(U("Failed to add template to database"));
                 }
-            } else {
+            }
+            else
+            {
                 response[U("success")] = json::value::boolean(false);
                 response[U("error")] = json::value::string(U("Failed to generate template"));
             }
         }
         else if (cmd == "identify")
         {
-            if (!algorithmHandle_) {
+            if (!algorithmHandle_)
+            {
                 std::cout << "错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
@@ -302,7 +425,8 @@ private:
             response[U("matchedId")] = json::value::number(matchedId);
             response[U("score")] = json::value::number(score);
         }
-        else {
+        else
+        {
             std::cout << "错误: 未知命令 " << cmd << std::endl;
             throw std::runtime_error("Unknown command");
         }
