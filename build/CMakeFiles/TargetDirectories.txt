@@ -1,3 +1,0 @@
-/home/qingshan/workspace/front-end/finger-cli/build/CMakeFiles/finger_server.dir
-/home/qingshan/workspace/front-end/finger-cli/build/CMakeFiles/edit_cache.dir
-/home/qingshan/workspace/front-end/finger-cli/build/CMakeFiles/rebuild_cache.dir

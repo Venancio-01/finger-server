@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/finger_cli.dir/main.cpp.o CMakeFiles/finger_cli.dir/finger_device.cpp.o CMakeFiles/finger_cli.dir/finger_algorithm.cpp.o CMakeFiles/finger_cli.dir/base64.cpp.o -o finger_cli  -ldl
