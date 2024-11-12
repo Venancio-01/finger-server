@@ -245,7 +245,6 @@ private:
         }
         else if (cmd == "capture")
         {
-            std::cout << "采集指纹" << std::endl;
             if (!device_ || !algorithmHandle_)
             {
                 throw std::runtime_error("Device or algorithm not initialized");
@@ -399,6 +398,9 @@ private:
                 fingerTemplate.data(),
                 &matchedId,
                 &score);
+
+            std::cout << "匹配的ID: " << matchedId << std::endl;
+            std::cout << "匹配分数: " << score << std::endl;
 
             response[U("success")] = json::value::boolean(identifyResult == 1);
             std::cout << "识别结果: " << (identifyResult == 1 ? "成功" : "失败") << std::endl;
