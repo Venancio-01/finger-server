@@ -126,25 +126,6 @@ private:
             bool isConnected = device_->isDeviceConnected();
             response[U("success")] = json::value::boolean(isConnected);
         }
-        else if (cmd == "getDeviceSize")
-        {
-            if (!device_)
-            {
-                throw std::runtime_error("Device not initialized");
-            }
-
-            int width = device_->getParameter(1);
-            int height = device_->getParameter(2);
-
-            if (width <= 0 || height <= 0)
-            {
-                throw std::runtime_error("Invalid device parameters");
-            }
-
-            response[U("success")] = json::value::boolean(true);
-            response[U("width")] = json::value::number(width);
-            response[U("height")] = json::value::number(height);
-        }
         else if (cmd == "openDevice")
         {
             if (!device_)
@@ -222,7 +203,8 @@ private:
                         templateBuffer.size(),
                         templateBuffer.data());
 
-                    if (result != 0)
+                    std::cout << "加载模板结果: " << result << std::endl;
+                    if (result <= 0)
                     {
                         hasError = true;
                         errorMsg = "Failed to load template for id " + std::to_string(id);
