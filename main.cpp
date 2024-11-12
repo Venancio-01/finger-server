@@ -188,7 +188,10 @@ private:
                 for (const auto &templ : templates)
                 {
                     int id = templ.at(U("id")).as_integer();
+                    std::cout << "模板ID: " << id << std::endl;
+
                     std::string templateData = utility::conversions::to_utf8string(templ.at(U("template")).as_string());
+                    std::cout << "模板数据: " << templateData << std::endl;
                     std::vector<unsigned char> templateBuffer = base64_decode(templateData);
                     std::cout << "模板数据大小: " << templateBuffer.size() << std::endl;
                     std::cout << "模板数据内容: ";
@@ -297,6 +300,12 @@ private:
             {
                 auto templateStr = templateData.as_string();
                 fingerTemplates.push_back(base64_decode(utility::conversions::to_utf8string(templateStr)));
+                std::cout << "模板数据大小: " << fingerTemplates.back().size() << std::endl;
+                std::cout << "模板数据内容: ";
+                for(const auto& byte : fingerTemplates.back()) {
+                    std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte) << " ";
+                }
+                std::cout << std::dec << std::endl;
             }
 
             // 准备指纹模板指针数组
