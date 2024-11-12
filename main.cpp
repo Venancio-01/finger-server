@@ -394,13 +394,15 @@ private:
             std::vector<unsigned char> fingerTemplate2 = base64_decode(utility::conversions::to_utf8string(templateData2));
 
             // 比对两个指纹
-            int score = 0;
-            int verifyResult = FingerAlgorithm::verifyTemplate(
+            int score = FingerAlgorithm::verifyTemplate(
                 algorithmHandle_,
                 fingerTemplate1.data(),
                 fingerTemplate2.data());
 
-            response[U("success")] = json::value::boolean(verifyResult == 1);
+            // 分数超过50认为比对成功
+            bool matched = score >= 50;
+            response[U("success")] = json::value::boolean(matched);
+            response[U("score")] = json::value::number(score);
         }
         else if (cmd == "identify")
         {
