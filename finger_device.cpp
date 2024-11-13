@@ -128,11 +128,6 @@ int FingerDevice::captureImage(unsigned char* buffer, int size) {
     }
     
     int result = g_capture(deviceHandle_, buffer, size);
-    if (result <= 0) {
-        std::cout << "采集图像失败: " << result << std::endl;
-    } else {
-        std::cout << "采集图像成功，数据大小: " << result << std::endl;
-    }
     return result;
 }
 
@@ -149,6 +144,5 @@ int FingerDevice::getParameter(int type) {
     }
     
     int value = g_getParameter(deviceHandle_, type);
-    std::cout << "获取参数 " << type << " = " << value << std::endl;
     return value;
 }

@@ -258,7 +258,6 @@ private:
 
             int width = device_->getParameter(1);
             int height = device_->getParameter(2);
-            std::cout << "开始采集指纹图像 (分辨率: " << width << "x" << height << ")" << std::endl;
 
             std::vector<unsigned char> imageBuffer(width * height);
             int captureResult = device_->captureImage(imageBuffer.data(), imageBuffer.size());
