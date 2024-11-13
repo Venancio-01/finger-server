@@ -120,7 +120,10 @@ private:
     json::value processCommand(const json::value &body)
     {
         auto cmd = utility::conversions::to_utf8string(body.at(U("cmd")).as_string());
-        std::cout << "\n收到命令: " << cmd << std::endl;
+        if (cmd != "capture")
+        {
+            std::cout << "\n收到命令: " << cmd << std::endl;
+        }
         json::value response;
 
         if (cmd == "isConnected")
@@ -176,13 +179,15 @@ private:
         }
         else if (cmd == "loadTemplates")
         {
-            if (!algorithmHandle_) {
+            if (!algorithmHandle_)
+            {
                 std::cout << "错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
 
             std::cout << "开始加载模板到内存数据库..." << std::endl;
-            try {
+            try
+            {
                 auto templates = body.at(U("templates")).as_array();
                 std::cout << "需要加载的模板数量: " << templates.size() << std::endl;
                 bool hasError = false;
@@ -190,16 +195,19 @@ private:
 
                 // 先清空数据库
                 int clearResult = FingerAlgorithm::clearTemplateDb(algorithmHandle_);
-                if (clearResult != 1) {
+                if (clearResult != 1)
+                {
                     response[U("success")] = json::value::boolean(false);
                     response[U("error")] = json::value::string(U("Failed to clear template database"));
                     return response;
                 }
                 std::cout << "清空数据库成功" << std::endl;
 
-                for (const auto& templ : templates) {
+                for (const auto &templ : templates)
+                {
                     int id = templ.at(U("id")).as_integer();
-                    if (id <= 0) {
+                    if (id <= 0)
+                    {
                         hasError = true;
                         errorMsg = "Invalid template ID: " + std::to_string(id) + " (must be > 0)";
                         break;
@@ -209,7 +217,8 @@ private:
                     std::string templateData = utility::conversions::to_utf8string(templ.at(U("template")).as_string());
                     std::vector<unsigned char> templateBuffer = base64_decode(templateData);
 
-                    if (templateBuffer.empty() || templateBuffer.size() > 2048) {  // 根据文档，模板大小不超过 1664 字节
+                    if (templateBuffer.empty() || templateBuffer.size() > 2048)
+                    { // 根据文档，模板大小不超过 1664 字节
                         hasError = true;
                         errorMsg = "Invalid template data size for ID " + std::to_string(id);
                         break;
@@ -222,7 +231,8 @@ private:
                         templateBuffer.size(),
                         templateBuffer.data());
 
-                    if (result <= 0) {
+                    if (result <= 0)
+                    {
                         hasError = true;
                         errorMsg = "Failed to load template for ID " + std::to_string(id);
                         break;
@@ -230,19 +240,22 @@ private:
                     std::cout << "模板 " << id << " 加载成功" << std::endl;
                 }
 
-                if (!hasError) {
+                if (!hasError)
+                {
                     // 获取已加载的模板数量
                     int count = FingerAlgorithm::getTemplateCount(algorithmHandle_);
                     std::cout << "模板加载完成，当前数据库中共有 " << count << " 个模板" << std::endl;
                 }
 
                 response[U("success")] = json::value::boolean(!hasError);
-                if (hasError) {
+                if (hasError)
+                {
                     response[U("error")] = json::value::string(utility::conversions::to_string_t(errorMsg));
                     std::cout << "加载失败: " << errorMsg << std::endl;
                 }
             }
-            catch (const json::json_exception& e) {
+            catch (const json::json_exception &e)
+            {
                 std::cout << "请求参数错误: " << e.what() << std::endl;
                 response[U("success")] = json::value::boolean(false);
                 response[U("error")] = json::value::string(U("Invalid request parameters"));
@@ -331,6 +344,14 @@ private:
             std::vector<unsigned char> fingerTemplate = base64_decode(
                 utility::conversions::to_utf8string(templateData));
 
+            std::cout << "指纹模板数据: ";
+            for (const auto &byte : templateData)
+            {
+                std::cout << std::hex << std::setw(2) << std::setfill('0')
+                          << static_cast<int>(byte) << " ";
+            }
+            std::cout << std::dec << std::endl;
+
             int matchedId = 0;
             int score = 0;
             int result = FingerAlgorithm::identifyTemplate(
@@ -338,6 +359,8 @@ private:
                 fingerTemplate.data(),
                 &matchedId,
                 &score);
+
+            std::cout << "识别结果: " << result << ", 匹配ID: " << matchedId << ", 分数: " << score << std::endl;
 
             response[U("success")] = json::value::boolean(result == 1);
             response[U("matchedId")] = json::value::number(matchedId);
@@ -430,7 +453,10 @@ private:
             throw std::runtime_error("Unknown command");
         }
 
-        std::cout << "命令执行完成，返回结果: " << response.serialize() << std::endl;
+        if (cmd != "capture")
+        {
+            std::cout << "命令执行完成，返回结果: " << response.serialize() << std::endl;
+        }
         return response;
     }
 
