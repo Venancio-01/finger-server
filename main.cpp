@@ -347,14 +347,6 @@ private:
             std::vector<unsigned char> fingerTemplate = base64_decode(
                 utility::conversions::to_utf8string(templateData));
 
-            std::cout << "指纹模板数据: ";
-            for (const auto &byte : templateData)
-            {
-                std::cout << std::hex << std::setw(2) << std::setfill('0')
-                          << static_cast<int>(byte) << " ";
-            }
-            std::cout << std::dec << std::endl;
-
             int matchedId = 0;
             int score = 0;
             int result = FingerAlgorithm::identifyTemplate(
@@ -362,8 +354,6 @@ private:
                 fingerTemplate.data(),
                 &matchedId,
                 &score);
-
-            std::cout << "识别结果: " << result << ", 匹配ID: " << matchedId << ", 分数: " << score << std::endl;
 
             response[U("success")] = json::value::boolean(result == 1);
             response[U("matchedId")] = json::value::number(matchedId);
