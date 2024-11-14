@@ -12,6 +12,9 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# 获取当前登录用户
+CURRENT_USER=$(who | awk '{print $1}' | head -n1)
+
 # 检查必需的动态库
 check_libraries() {
     local all_exists=true
@@ -46,7 +49,7 @@ check_services_running() {
         return 1
     fi
     if pgrep -f "smart-cabinet" > /dev/null; then
-        echo -e "${RED}错误: smart-cabinet 服务已经在运行${NC}"
+        echo -e "${RED}错误: smart-cabinet 已经在运行${NC}"
         return 1
     fi
     return 0
@@ -72,6 +75,17 @@ check_executables() {
     return 0
 }
 
+# 更新动态库缓存
+update_library_cache() {
+    echo -e "${YELLOW}更新动态库缓存...${NC}"
+    ldconfig
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}错误: 更新动态库缓存失败${NC}"
+        return 1
+    fi
+    return 0
+}
+
 # 启动服务
 start_services() {
     # 启动指纹服务
@@ -88,20 +102,35 @@ start_services() {
     fi
     echo -e "${GREEN}指纹服务启动成功！${NC}"
     
-    # 启动 smart-cabinet 服务
-    echo -e "${YELLOW}正在启动 smart-cabinet 服务...${NC}"
-    nohup /opt/smart-cabinet/@smart-cabinetsmart-cabinet > smart_cabinet.log 2>&1 &
-    CABINET_PID=$!
+    # 启动 smart-cabinet
+    echo -e "${YELLOW}正在启动 smart-cabinet...${NC}"
     
-    # 等待 smart-cabinet 服务启动
-    sleep 2
+    # 设置 Electron 应用需要的环境变量
+    export DISPLAY=:0
+    export XAUTHORITY="/home/$CURRENT_USER/.Xauthority"
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u $CURRENT_USER)/bus"
+    export XDG_RUNTIME_DIR="/run/user/$(id -u $CURRENT_USER)"
+    export NO_AT_BRIDGE=1
+    export ELECTRON_NO_SANDBOX=1
     
-    if ! ps -p $CABINET_PID > /dev/null; then
-        echo -e "${RED}smart-cabinet 服务启动失败${NC}"
+    # 使用 su 切换到当前用户来运行 Electron 应用
+    su - $CURRENT_USER -c "cd /opt/smart-cabinet && \
+        DISPLAY=:0 \
+        ELECTRON_NO_SANDBOX=1 \
+        NO_AT_BRIDGE=1 \
+        XDG_RUNTIME_DIR=/run/user/$(id -u $CURRENT_USER) \
+        DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u $CURRENT_USER)/bus \
+        nohup ./@smart-cabinetsmart-cabinet > /tmp/smart_cabinet.log 2>&1 &"
+    
+    # 等待 Electron 应用启动
+    sleep 5
+    
+    if ! pgrep -f "smart-cabinet" > /dev/null; then
+        echo -e "${RED}smart-cabinet 启动失败${NC}"
         kill $FINGER_PID
         return 1
     fi
-    echo -e "${GREEN}smart-cabinet 服务启动成功！${NC}"
+    echo -e "${GREEN}smart-cabinet 启动成功！${NC}"
     
     return 0
 }
@@ -110,7 +139,7 @@ start_services() {
 stop_services() {
     echo -e "\n${YELLOW}正在停止服务...${NC}"
     pkill -f "finger_server"
-    pkill -f "smart-cabinet"
+    su - $CURRENT_USER -c "pkill -f smart-cabinet"
     echo -e "${GREEN}服务已停止${NC}"
 }
 
@@ -122,6 +151,7 @@ main() {
     check_services_running || exit 1
     check_executables || exit 1
     check_libraries || exit 1
+    update_library_cache || exit 1
     
     # 启动服务
     if ! start_services; then
@@ -132,14 +162,14 @@ main() {
     # 显示日志
     echo -e "${YELLOW}服务日志:${NC}"
     echo -e "指纹服务日志: finger_server.log"
-    echo -e "smart-cabinet 服务日志: smart_cabinet.log"
+    echo -e "smart-cabinet 日志: /tmp/smart_cabinet.log"
     
     # 使用 tail -f 同时监控两个日志文件
-    tail -f finger_server.log smart_cabinet.log
+    tail -f finger_server.log /tmp/smart_cabinet.log
 }
 
 # 捕获 Ctrl+C
 trap 'stop_services; exit 0' INT TERM
 
 # 运行主函数
-main 
+main
