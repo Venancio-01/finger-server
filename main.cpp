@@ -221,7 +221,7 @@ private:
                     std::vector<unsigned char> templateBuffer = base64_decode(templateData);
 
                     if (templateBuffer.empty() || templateBuffer.size() > 2048)
-                    { // 根据文档，模板大小不超过 1664 字节
+                    { // 根据文档，模板大小���超过 1664 字节
                         hasError = true;
                         errorMsg = "Invalid template data size for ID " + std::to_string(id);
                         break;
@@ -468,48 +468,33 @@ private:
     void *algorithmHandle_;
 };
 
-// 添加静态变量和函数
-static std::condition_variable *p_exit_cv = nullptr;
+// 全局变量
+std::condition_variable g_exit_cv;
+std::mutex g_exit_mutex;
 
-static void signal_handler(int)
-{
-    if (p_exit_cv)
-    {
-        p_exit_cv->notify_one();
-    }
+// 信号处理函数
+void signal_handler(int) {
+    g_exit_cv.notify_one();
 }
 
-int main()
-{
+int main() {
     FingerServer server;
-
-    std::condition_variable exit_cv;
-    std::mutex exit_mutex;
-    std::unique_lock<std::mutex> lock(exit_mutex);
-
-    // 设置全局指针
-    p_exit_cv = &exit_cv;
-
+    
     // 启动服务
-    if (!server.start())
-    {
+    if (!server.start()) {
         return 1;
     }
-
-    // 使用条件变量等待退出信号
-    std::condition_variable exit_cv;
-    std::mutex exit_mutex;
-    std::unique_lock<std::mutex> lock(exit_mutex);
-
+    
     // 设置信号处理
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
-
+    
     std::cout << "服务已启动，按 Ctrl+C 退出..." << std::endl;
-
+    
     // 等待退出信号
-    exit_cv.wait(lock);
-
+    std::unique_lock<std::mutex> lock(g_exit_mutex);
+    g_exit_cv.wait(lock);
+    
     // 停止服务
     server.stop();
     return 0;
