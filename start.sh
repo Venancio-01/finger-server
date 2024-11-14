@@ -63,6 +63,13 @@ check_executable() {
     return 0
 }
 
+# 更新库缓存
+update_library_cache() {
+    echo -e "${YELLOW}更新库缓存...${NC}"
+    sudo ldconfig
+    return 0
+}
+
 # 主函数
 main() {
     echo -e "${YELLOW}启动指纹服务...${NC}"
@@ -71,10 +78,11 @@ main() {
     check_service_running || exit 1
     check_executable || exit 1
     check_libraries || exit 1
+    update_library_cache || exit 1
     
     # 启动服务
     echo -e "${YELLOW}正在启动服务...${NC}"
-    ./finger_server > finger_server.log 2>&1 &
+    nohup ./finger_server > finger_server.log 2>&1 &
     
     # 等待服务启动
     sleep 2
@@ -83,6 +91,8 @@ main() {
     if pgrep -f "finger_server" > /dev/null; then
         echo -e "${GREEN}服务启动成功！${NC}"
         echo -e "${YELLOW}服务日志: finger_server.log${NC}"
+        # 显示最新日志
+        tail -f finger_server.log
     else
         echo -e "${RED}服务启动失败，请检查日志文件${NC}"
         exit 1

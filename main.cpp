@@ -6,6 +6,9 @@
 #include <iostream>
 #include <memory>
 #include <iomanip>
+#include <condition_variable>
+#include <mutex>
+#include <signal.h>
 
 using namespace web;
 using namespace web::http;
@@ -465,9 +468,27 @@ private:
     void *algorithmHandle_;
 };
 
+// 添加静态变量和函数
+static std::condition_variable *p_exit_cv = nullptr;
+
+static void signal_handler(int)
+{
+    if (p_exit_cv)
+    {
+        p_exit_cv->notify_one();
+    }
+}
+
 int main()
 {
     FingerServer server;
+
+    std::condition_variable exit_cv;
+    std::mutex exit_mutex;
+    std::unique_lock<std::mutex> lock(exit_mutex);
+
+    // 设置全局指针
+    p_exit_cv = &exit_cv;
 
     // 启动服务
     if (!server.start())
@@ -475,9 +496,19 @@ int main()
         return 1;
     }
 
-    std::cout << "按 Enter 键退出..." << std::endl;
-    std::string line;
-    std::getline(std::cin, line);
+    // 使用条件变量等待退出信号
+    std::condition_variable exit_cv;
+    std::mutex exit_mutex;
+    std::unique_lock<std::mutex> lock(exit_mutex);
+
+    // 设置信号处理
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
+    std::cout << "服务已启动，按 Ctrl+C 退出..." << std::endl;
+
+    // 等待退出信号
+    exit_cv.wait(lock);
 
     // 停止服务
     server.stop();
