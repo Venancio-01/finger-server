@@ -63,17 +63,6 @@ check_executable() {
     return 0
 }
 
-# 更新动态库缓存
-update_library_cache() {
-    echo -e "${YELLOW}更新动态库缓存...${NC}"
-    ldconfig
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}错误: 更新动态库缓存失败${NC}"
-        return 1
-    fi
-    return 0
-}
-
 # 主函数
 main() {
     echo -e "${YELLOW}启动指纹服务...${NC}"
@@ -82,7 +71,6 @@ main() {
     check_service_running || exit 1
     check_executable || exit 1
     check_libraries || exit 1
-    update_library_cache || exit 1
     
     # 启动服务
     echo -e "${YELLOW}正在启动服务...${NC}"
