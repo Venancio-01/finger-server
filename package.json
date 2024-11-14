@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "pkg": "pkg .",
-    "test": "ts-node test/finger_test.ts"
+    "test": "ts-node test/finger_test.ts",
+    "start:finger": "ts-node scripts/start-finger-server.ts"
   },
   "pkg": {
     "scripts": "dist/**/*.js",
