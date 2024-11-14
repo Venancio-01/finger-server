@@ -62,12 +62,12 @@ check_executables() {
     if [ ! -f "/opt/smart-cabinet/@smart-cabinetsmart-cabinet" ]; then
         echo -e "${RED}错误: 找不到 smart-cabinet 可执行文件${NC}"
         return 1
-    }
+    fi
     
     if [ ! -x "./finger_server" ]; then
         echo -e "${YELLOW}添加 finger_server 执行权限...${NC}"
         chmod +x ./finger_server
-    }
+    fi
     
     return 0
 }
