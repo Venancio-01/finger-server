@@ -369,7 +369,6 @@ private:
                 throw std::runtime_error("Algorithm not initialized");
             }
 
-            auto fingerId = body.at(U("fingerId")).as_integer();
             auto templateDataArray = body.at(U("templateData")).as_array();
 
             std::vector<std::vector<unsigned char>> fingerTemplates;
