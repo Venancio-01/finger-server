@@ -221,7 +221,7 @@ private:
                     std::vector<unsigned char> templateBuffer = base64_decode(templateData);
 
                     if (templateBuffer.empty() || templateBuffer.size() > 2048)
-                    { // 根据文档，模板大小���超过 1664 字节
+                    { 
                         hasError = true;
                         errorMsg = "Invalid template data size for ID " + std::to_string(id);
                         break;
@@ -402,23 +402,9 @@ private:
 
             if (genResult > 0)
             {
-                int addResult = FingerAlgorithm::addTemplateToDb(
-                    algorithmHandle_,
-                    fingerId,
-                    genResult,
-                    finalTemplate.data());
-
-                if (addResult > 0)
-                {
-                    response[U("success")] = json::value::boolean(true);
-                    response[U("templateData")] = json::value::string(
-                        utility::conversions::to_string_t(base64_encode(finalTemplate)));
-                }
-                else
-                {
-                    response[U("success")] = json::value::boolean(false);
-                    response[U("error")] = json::value::string(U("Failed to add template to database"));
-                }
+                response[U("success")] = json::value::boolean(true);
+                response[U("templateData")] = json::value::string(
+                    utility::conversions::to_string_t(base64_encode(finalTemplate)));
             }
             else
             {
@@ -473,28 +459,31 @@ std::condition_variable g_exit_cv;
 std::mutex g_exit_mutex;
 
 // 信号处理函数
-void signal_handler(int) {
+void signal_handler(int)
+{
     g_exit_cv.notify_one();
 }
 
-int main() {
+int main()
+{
     FingerServer server;
-    
+
     // 启动服务
-    if (!server.start()) {
+    if (!server.start())
+    {
         return 1;
     }
-    
+
     // 设置信号处理
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
-    
+
     std::cout << "服务已启动，按 Ctrl+C 退出..." << std::endl;
-    
+
     // 等待退出信号
     std::unique_lock<std::mutex> lock(g_exit_mutex);
     g_exit_cv.wait(lock);
-    
+
     // 停止服务
     server.stop();
     return 0;
