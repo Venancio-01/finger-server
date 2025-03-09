@@ -1,0 +1,15 @@
+{
+    "name": "finger-server",
+    "version": "1.0.0",
+    "dependencies": [
+        {
+            "name": "cpprestsdk",
+            "version>=": "2.10.19#2"
+        },
+        {
+            "name": "nlohmann-json",
+            "version>=": "3.11.2"
+        }
+    ],
+    "builtin-baseline": "8e7f6491ae3cae2f26eacadda80a45e548b2d9e8"
+} 

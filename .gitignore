@@ -33,3 +33,7 @@ logs/
 *.temp
 *.swp
 *~
+
+# vcpkg
+vcpkg_installed/
+!vcpkg.json
