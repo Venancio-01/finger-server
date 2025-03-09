@@ -1,5 +1,5 @@
 {
-  "name": "finger-cli",
+  "name": "finger-server",
   "version": "1.0.0",
   "bin": {
     "finger-cli": "./dist/index.js"
