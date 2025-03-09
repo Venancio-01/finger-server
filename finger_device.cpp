@@ -1,6 +1,8 @@
 #include "finger_device.h"
+#include "logger.h"
 #include <dlfcn.h>
 #include <iostream>
+#include <sstream>
 
 // SDK 函数指针定义
 typedef int (*SensorEnumDevices)(DeviceInfo*, int);
@@ -21,7 +23,7 @@ static SensorStatus g_status = nullptr;  // 设备状态检查函数指针
 bool FingerDevice::initSDK() {
     g_deviceSDK = dlopen("libzkfpcap.so", RTLD_LAZY);
     if (!g_deviceSDK) {
-        std::cout << "加载设备 SDK 失败: " << dlerror() << std::endl;
+        LOG_INFO("加载设备 SDK 失败: " + std::string(dlerror()));
         return false;
     }
         
@@ -36,7 +38,7 @@ bool FingerDevice::initSDK() {
     // 检查所有函数是否加载成功
     if (!g_enumDevices || !g_openDevice || !g_closeDevice || 
         !g_capture || !g_getParameter || !g_status) {
-        std::cout << "获取函数指针失败: " << dlerror() << std::endl;
+        LOG_INFO("获取函数指针失败: " + std::string(dlerror()));
         dlclose(g_deviceSDK);
         g_deviceSDK = nullptr;
         return false;
@@ -55,50 +57,51 @@ void FingerDevice::destroySDK() {
         g_capture = nullptr;
         g_getParameter = nullptr;
         g_status = nullptr;
+        LOG_INFO("设备 SDK 已销毁");
     }
 }
 
 bool FingerDevice::isDeviceConnected() {
     deviceList_.resize(16);  // 文档建议的最大设备数
     int count = g_enumDevices(deviceList_.data(), deviceList_.size());
-    std::cout << "检测到 " << count << " 个设备" << std::endl;
+    LOG_INFO("检测到 " + std::to_string(count) + " 个设备");
     return count > 0;
 }
 
 bool FingerDevice::openDevice() {
     if (isOpen_) {
-        std::cout << "设备已经打开" << std::endl;
+        LOG_INFO("设备已经打开");
         return false;
     }
     
     if (deviceList_.empty()) {
-        std::cout << "没有可用设备" << std::endl;
+        LOG_INFO("没有可用设备");
         return false;
     }
         
     deviceHandle_ = g_openDevice(&deviceList_[0]);
     if (!deviceHandle_) {
-        std::cout << "打开设备失败" << std::endl;
+        LOG_INFO("打开设备失败");
         return false;
     }
     
     // 检查设备状态
     int status = g_status(deviceHandle_);
     if (status != 0) {
-        std::cout << "设备状态异常: " << status << std::endl;
+        LOG_INFO("设备状态异常: " + std::to_string(status));
         g_closeDevice(deviceHandle_);
         deviceHandle_ = nullptr;
         return false;
     }
         
     isOpen_ = true;
-    std::cout << "设备打开成功" << std::endl;
+    LOG_INFO("设备打开成功");
     return true;
 }
 
 bool FingerDevice::closeDevice() {
     if (!isOpen_) {
-        std::cout << "设备未打开" << std::endl;
+        LOG_INFO("设备未打开");
         return false;
     }
         
@@ -106,43 +109,49 @@ bool FingerDevice::closeDevice() {
     if (result == 0) {
         isOpen_ = false;
         deviceHandle_ = nullptr;
-        std::cout << "设备关闭成功" << std::endl;
+        LOG_INFO("设备关闭成功");
         return true;
     }
     
-    std::cout << "设备关闭失败: " << result << std::endl;
+    LOG_INFO("设备关闭失败: " + std::to_string(result));
     return false;
 }
 
 int FingerDevice::captureImage(unsigned char* buffer, int size) {
     if (!isOpen_) {
-        std::cout << "设备未打开" << std::endl;
+        LOG_INFO("设备未打开");
         return -1;
     }
     
     // 检查设备状态
     int status = g_status(deviceHandle_);
     if (status != 0) {
-        std::cout << "设备状态异常: " << status << std::endl;
+        LOG_INFO("设备状态异常: " + std::to_string(status));
         return -1;
     }
     
     int result = g_capture(deviceHandle_, buffer, size);
+    if (result <= 0) {
+        LOG_INFO("采集图像失败: " + std::to_string(result));
+    }
     return result;
 }
 
 int FingerDevice::getParameter(int type) {
     if (!isOpen_) {
-        std::cout << "设备未打开" << std::endl;
+        LOG_INFO("设备未打开");
         return -1;
     }
     
     // 根据文档，type 1 表示宽度，type 2 表示高度
     if (type != 1 && type != 2) {
-        std::cout << "无效的参数类型: " << type << std::endl;
+        LOG_INFO("无效的参数类型: " + std::to_string(type));
         return -1;
     }
     
     int value = g_getParameter(deviceHandle_, type);
+    if (value <= 0) {
+        LOG_INFO("获取参数失败: type=" + std::to_string(type) + ", result=" + std::to_string(value));
+    }
     return value;
 }

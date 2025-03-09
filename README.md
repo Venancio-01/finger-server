@@ -23,25 +23,121 @@
   - libzkalg12.so - ZKFinger10.0 算法核心库
   - 其他系统依赖库
 
+## 编译环境要求
+
+- GCC/G++ 7.0 及以上版本（支持 C++17）
+- CMake 3.10 及以上版本
+- vcpkg 包管理器
+- 系统依赖：
+  - cpprestsdk
+  - nlohmann_json
+  - pthread
+  - dl (动态链接库)
+
 ## 安装说明
 
-1. 确保系统已安装必需的动态库：
+### 1. 安装编译依赖
+
 ```bash
+# 安装基本编译工具
+sudo apt-get update
+sudo apt-get install -y build-essential cmake
+
+# 安装 vcpkg
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh
+./vcpkg integrate install
+
+# 安装项目依赖
+./vcpkg install cpprestsdk:x64-linux
+./vcpkg install nlohmann-json:x64-linux
+```
+
+### 2. 安装 SDK 动态库
+
+```bash
+# 复制 SDK 动态库到系统目录
 sudo cp lib/*.so /usr/local/lib/
 sudo ldconfig
 ```
 
-2. 编译项目：
+### 3. 编译项目
+
 ```bash
+# 创建并进入构建目录
 mkdir build && cd build
-cmake ..
-make
+
+# 配置 CMake 项目
+# 注意：请将 ~/vcpkg 替换为你的 vcpkg 实际安装路径
+cmake -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake ..
+
+# 编译
+make -j$(nproc)
 ```
 
-3. 运行服务：
+### 4. 运行服务
+
 ```bash
 sudo ./start.sh
 ```
+
+## 开发说明
+
+### 项目结构
+```
+finger-server/
+├── CMakeLists.txt          # CMake 构建配置文件
+├── main.cpp                # 主程序入口
+├── finger_device.h         # 设备操作相关头文件
+├── finger_device.cpp       # 设备操作实现
+├── finger_algorithm.h      # 算法相关头文件
+├── finger_algorithm.cpp    # 算法实现
+├── base64.h               # Base64 编解码头文件
+├── base64.cpp             # Base64 编解码实现
+├── lib/                   # SDK 动态库目录
+│   ├── libzkfpcap.so
+│   ├── libzkfp.so
+│   └── libzkalg12.so
+├── doc/                   # 文档目录
+│   └── ZKFinger SDK.md   # SDK 开发文档
+└── start.sh              # 服务启动脚本
+```
+
+### 编译选项说明
+
+CMakeLists.txt 中的主要配置：
+
+- CMAKE_CXX_STANDARD：设置为 17，启用 C++17 特性
+- CMAKE_TOOLCHAIN_FILE：指定 vcpkg 工具链文件路径
+- 依赖项：
+  - cpprestsdk：用于 HTTP 服务器功能
+  - nlohmann_json：用于 JSON 数据处理
+  - pthread：用于多线程支持
+  - dl：用于动态加载库
+
+### 常见编译问题
+
+1. CMake 找不到 vcpkg 工具链
+   ```bash
+   # 解决方法：指定 vcpkg 根目录
+   export VCPKG_ROOT=~/vcpkg
+   cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake ..
+   ```
+
+2. 找不到 SDK 动态库
+   ```bash
+   # 解决方法：确保动态库已正确安装
+   sudo ldconfig -v | grep zkfp
+   ```
+
+3. 编译器版本过低
+   ```bash
+   # 解决方法：安装更新的 GCC/G++
+   sudo apt-get install -y gcc-9 g++-9
+   export CC=gcc-9
+   export CXX=g++-9
+   ```
 
 ## API 接口说明
 

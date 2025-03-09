@@ -19,6 +19,7 @@ add_executable(finger_server
     finger_device.cpp
     finger_algorithm.cpp
     base64.cpp
+    logger.cpp
 )
 
 target_link_libraries(finger_server
