@@ -3,7 +3,6 @@
 #include "finger_device.h"
 #include "finger_algorithm.h"
 #include "base64.h"
-#include "logger.h"
 #include <iostream>
 #include <memory>
 #include <iomanip>
@@ -22,11 +21,9 @@ using namespace web::http::experimental::listener;
 class FingerServer
 {
 public:
-    FingerServer() : device_(nullptr), algorithmHandle_(nullptr), logger_("/var/log/finger_server/")
+    FingerServer() : device_(nullptr), algorithmHandle_(nullptr)
     {
-        // 设置全局日志实例
-        ILogger::setInstance(&logger_);
-        LOG_INFO("指纹服务初始化开始");
+        std::cout << "[INFO] 指纹服务初始化开始" << std::endl;
         
         // 创建 HTTP 监听器
         listener_ = http_listener(U("http://0.0.0.0:22813"));
@@ -34,21 +31,14 @@ public:
         // 注册请求处理函数
         listener_.support(methods::POST, std::bind(&FingerServer::handlePost, this, std::placeholders::_1));
         
-        LOG_INFO("HTTP 监听器已创建");
-    }
-
-    ~FingerServer() {
-        // 清除全局日志实例
-        if (ILogger::getInstance() == &logger_) {
-            ILogger::setInstance(nullptr);
-        }
+        std::cout << "[INFO] HTTP 监听器已创建" << std::endl;
     }
 
     bool start()
     {
         try
         {
-            LOG_INFO("开始初始化 SDK...");
+            std::cout << "[INFO] 开始初始化 SDK..." << std::endl;
             // 初始化 SDK
             bool deviceInit = FingerDevice::initSDK();
             bool algorithmInit = FingerAlgorithm::initSDK();
@@ -56,23 +46,22 @@ public:
             if (deviceInit && algorithmInit)
             {
                 device_ = std::make_unique<FingerDevice>();
-                LOG_INFO("SDK 初始化成功");
+                std::cout << "[INFO] SDK 初始化成功" << std::endl;
             }
             else
             {
-                LOG_ERROR("SDK 初始化失败");
+                std::cerr << "[ERROR] SDK 初始化失败" << std::endl;
                 return false;
             }
 
             // 启动 HTTP 服务
             listener_.open().wait();
-            LOG_INFO("指纹服务已启动，监听端口: 22813");
-            handleTest();
+            std::cout << "[INFO] 指纹服务已启动，监听端口: 22813" << std::endl;
             return true;
         }
         catch (const std::exception &e)
         {
-            LOG_ERROR("服务启动失败: " + std::string(e.what()));
+            std::cerr << "[ERROR] 服务启动失败: " << e.what() << std::endl;
             return false;
         }
     }
@@ -81,55 +70,41 @@ public:
     {
         try
         {
-            LOG_INFO("开始停止服务...");
+            std::cout << "[INFO] 开始停止服务..." << std::endl;
             // 关闭 HTTP 服务
             listener_.close().wait();
 
             // 清理资源
             if (algorithmHandle_)
             {
-                LOG_INFO("正在关闭算法模块...");
+                std::cout << "[INFO] 正在关闭算法模块..." << std::endl;
                 FingerAlgorithm::closeAlgorithm(algorithmHandle_);
                 algorithmHandle_ = nullptr;
             }
             if (device_)
             {
-                LOG_INFO("正在关闭设备...");
+                std::cout << "[INFO] 正在关闭设备..." << std::endl;
                 device_->closeDevice();
                 device_.reset();
             }
 
             // 销毁 SDK
-            LOG_INFO("正在销毁 SDK...");
+            std::cout << "[INFO] 正在销毁 SDK..." << std::endl;
             FingerDevice::destroySDK();
             FingerAlgorithm::destroySDK();
 
-            LOG_INFO("服务已停止，资源已清理");
-            
-            // 关闭日志文件
-            logger_.close();
+            std::cout << "[INFO] 服务已停止，资源已清理" << std::endl;
         }
         catch (const std::exception &e)
         {
-            LOG_ERROR("服务停止时发生错误: " + std::string(e.what()));
+            std::cerr << "[ERROR] 服务停止时发生错误: " << e.what() << std::endl;
         }
     }
 
 private:
-    FileLogger logger_;
     http_listener listener_;
     std::unique_ptr<FingerDevice> device_;
     void *algorithmHandle_;
-
-
-    void handleTest()
-    {
-            bool isConnected = device_->isDeviceConnected();
-            LOG_INFO("设备连接状态: " + std::string(isConnected ? "已连接" : "未连接"));
-
-            bool success = device_->openDevice();
-            LOG_INFO("设备打开状态: " + std::string(success ? "成功" : "失败"));
-    }
 
     void handlePost(http_request request)
     {
@@ -167,21 +142,21 @@ private:
         auto cmd = utility::conversions::to_utf8string(body.at(U("cmd")).as_string());
         if (cmd != "capture")
         {
-            LOG_INFO("收到命令: " + cmd);
+            std::cout << "[INFO] 收到命令: " << cmd << std::endl;
         }
         json::value response;
 
         if (cmd == "isConnected")
         {
             bool isConnected = device_->isDeviceConnected();
+            std::cout << "[INFO] 设备连接状态: " << (isConnected ? "已连接" : "未连接") << std::endl;
             response[U("success")] = json::value::boolean(isConnected);
-            LOG_INFO("设备连接状态: " + std::string(isConnected ? "已连接" : "未连接"));
         }
         else if (cmd == "openDevice")
         {
             if (!device_)
             {
-                LOG_ERROR("错误: 设备未初始化");
+                std::cerr << "[ERROR] 错误: 设备未初始化" << std::endl;
                 throw std::runtime_error("Device not initialized");
             }
 
@@ -190,19 +165,19 @@ private:
             {
                 int width = device_->getParameter(1);  // 1=宽度
                 int height = device_->getParameter(2); // 2=高度
-                LOG_INFO("设备参数 - 宽度: " + std::to_string(width) + ", 高度: " + std::to_string(height));
+                std::cout << "[INFO] 设备参数 - 宽度: " << width << ", 高度: " << height << std::endl;
 
                 algorithmHandle_ = FingerAlgorithm::initAlgorithm(0, width, height, nullptr);
                 success = algorithmHandle_ != nullptr;
                 
                 if (success) {
-                    LOG_INFO("设备打开成功，算法初始化成功");
+                    std::cout << "[INFO] 设备打开成功，算法初始化成功" << std::endl;
                 } else {
-                    LOG_INFO("设备打开成功，但算法初始化失败");
+                    std::cout << "[INFO] 设备打开成功，但算法初始化失败" << std::endl;
                 }
             }
             else {
-                LOG_ERROR("设备打开失败");
+                std::cerr << "[ERROR] 设备打开失败" << std::endl;
             }
 
             response[U("success")] = json::value::boolean(success);
@@ -215,17 +190,17 @@ private:
         {
             if (!device_)
             {
-                LOG_ERROR("错误: 设备未初始化");
+                std::cerr << "[ERROR] 错误: 设备未初始化" << std::endl;
                 throw std::runtime_error("Device not initialized");
             }
 
             bool success = device_->closeDevice();
             if (success)
             {
-                LOG_INFO("设备已成功关闭");
+                std::cout << "[INFO] 设备已成功关闭" << std::endl;
             }
             else {
-                LOG_ERROR("设备关闭失败");
+                std::cerr << "[ERROR] 设备关闭失败" << std::endl;
             }
 
             response[U("success")] = json::value::boolean(success);
@@ -238,15 +213,15 @@ private:
         {
             if (!algorithmHandle_)
             {
-                LOG_ERROR("错误: 算法未初始化");
+                std::cerr << "[ERROR] 错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
 
-            LOG_INFO("开始加载模板到内存数据库...");
+            std::cout << "[INFO] 开始加载模板到内存数据库..." << std::endl;
             try
             {
                 auto templates = body.at(U("templates")).as_array();
-                LOG_INFO("需要加载的模板数量: " + std::to_string(templates.size()));
+                std::cout << "[INFO] 需要加载的模板数量: " << templates.size() << std::endl;
                 bool hasError = false;
                 std::string errorMsg;
 
@@ -254,12 +229,12 @@ private:
                 int clearResult = FingerAlgorithm::clearTemplateDb(algorithmHandle_);
                 if (clearResult != 1)
                 {
-                    LOG_ERROR("清空数据库失败");
+                    std::cerr << "[ERROR] 清空数据库失败" << std::endl;
                     response[U("success")] = json::value::boolean(false);
                     response[U("error")] = json::value::string(U("Failed to clear template database"));
                     return response;
                 }
-                LOG_INFO("清空数据库成功");
+                std::cout << "[INFO] 清空数据库成功" << std::endl;
 
                 for (const auto &templ : templates)
                 {
@@ -270,7 +245,7 @@ private:
                         errorMsg = "Invalid template ID: " + std::to_string(id) + " (must be > 0)";
                         break;
                     }
-                    LOG_INFO("正在加载模板 ID: " + std::to_string(id));
+                    std::cout << "[INFO] 正在加载模板 ID: " << id << std::endl;
 
                     std::string templateData = utility::conversions::to_utf8string(templ.at(U("template")).as_string());
                     std::vector<unsigned char> templateBuffer = base64_decode(templateData);
@@ -295,26 +270,26 @@ private:
                         errorMsg = "Failed to load template for ID " + std::to_string(id);
                         break;
                     }
-                    LOG_INFO("模板 " + std::to_string(id) + " 加载成功");
+                    std::cout << "[INFO] 模板 " << id << " 加载成功" << std::endl;
                 }
 
                 if (!hasError)
                 {
                     // 获取已加载的模板数量
                     int count = FingerAlgorithm::getTemplateCount(algorithmHandle_);
-                    LOG_INFO("模板加载完成，当前数据库中共有 " + std::to_string(count) + " 个模板");
+                    std::cout << "[INFO] 模板加载完成，当前数据库中共有 " << count << " 个模板" << std::endl;
                 }
 
                 response[U("success")] = json::value::boolean(!hasError);
                 if (hasError)
                 {
                     response[U("error")] = json::value::string(utility::conversions::to_string_t(errorMsg));
-                    LOG_ERROR("加载失败: " + errorMsg);
+                    std::cerr << "[ERROR] 加载失败: " << errorMsg << std::endl;
                 }
             }
             catch (const json::json_exception &e)
             {
-                LOG_ERROR("请求参数错误: " + std::string(e.what()));
+                std::cerr << "[ERROR] 请求参数错误: " << e.what() << std::endl;
                 response[U("success")] = json::value::boolean(false);
                 response[U("error")] = json::value::string(U("Invalid request parameters"));
             }
@@ -323,7 +298,7 @@ private:
         {
             if (!device_ || !algorithmHandle_)
             {
-                LOG_ERROR("错误: 设备或算法未初始化");
+                std::cerr << "[ERROR] 错误: 设备或算法未初始化" << std::endl;
                 throw std::runtime_error("Device or algorithm not initialized");
             }
 
@@ -348,7 +323,7 @@ private:
 
                 if (templateLength > 0)
                 {
-                    LOG_INFO("指纹采集和特征提取成功");
+                    std::cout << "[INFO] 指纹采集和特征提取成功" << std::endl;
                     response[U("success")] = json::value::boolean(true);
                     response[U("template")] = json::value::string(
                         utility::conversions::to_string_t(base64_encode(templateBuffer)));
@@ -356,14 +331,14 @@ private:
                 }
                 else
                 {
-                    LOG_ERROR("特征提取失败");
+                    std::cerr << "[ERROR] 特征提取失败" << std::endl;
                     response[U("success")] = json::value::boolean(false);
                     response[U("error")] = json::value::string(U("Feature extraction failed"));
                 }
             }
             else
             {
-                LOG_ERROR("指纹采集失败");
+                std::cerr << "[ERROR] 指纹采集失败" << std::endl;
                 response[U("success")] = json::value::boolean(false);
                 response[U("error")] = json::value::string(U("Capture failed"));
             }
@@ -372,7 +347,7 @@ private:
         {
             if (!algorithmHandle_)
             {
-                LOG_ERROR("错误: 算法未初始化");
+                std::cerr << "[ERROR] 错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
 
@@ -390,7 +365,7 @@ private:
                 fingerTemplate2.data());
 
             bool matched = score >= 50; // 按文档推荐阈值
-            LOG_INFO("指纹比对完成，得分: " + std::to_string(score) + ", 结果: " + (matched ? "匹配" : "不匹配"));
+            std::cout << "[INFO] 指纹比对完成，得分: " << score << ", 结果: " << (matched ? "匹配" : "不匹配") << std::endl;
             
             response[U("success")] = json::value::boolean(matched);
             response[U("score")] = json::value::number(score);
@@ -399,7 +374,7 @@ private:
         {
             if (!algorithmHandle_)
             {
-                LOG_ERROR("错误: 算法未初始化");
+                std::cerr << "[ERROR] 错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
 
@@ -421,21 +396,21 @@ private:
             response[U("threshold")] = json::value::number(70); // 文档推荐阈值
 
             if (result == 1) {
-                LOG_INFO("指纹识别成功，匹配ID: " + std::to_string(matchedId) + ", 得分: " + std::to_string(score));
+                std::cout << "[INFO] 指纹识别成功，匹配ID: " << matchedId << ", 得分: " << score << std::endl;
             } else {
-                LOG_INFO("指纹识别失败，未找到匹配");
+                std::cout << "[INFO] 指纹识别失败，未找到匹配" << std::endl;
             }
         }
         else if (cmd == "register")
         {
             if (!algorithmHandle_)
             {
-                LOG_ERROR("错误: 算法未初始化");
+                std::cerr << "[ERROR] 错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
 
             auto templateDataArray = body.at(U("templateData")).as_array();
-            LOG_INFO("开始注册指纹，输入模板数量: " + std::to_string(templateDataArray.size()));
+            std::cout << "[INFO] 开始注册指纹，输入模板数量: " << templateDataArray.size() << std::endl;
 
             std::vector<std::vector<unsigned char>> fingerTemplates;
             std::vector<unsigned char *> templatePtrs;
@@ -457,14 +432,14 @@ private:
 
             if (genResult > 0)
             {
-                LOG_INFO("指纹注册成功，生成最终模板");
+                std::cout << "[INFO] 指纹注册成功，生成最终模板" << std::endl;
                 response[U("success")] = json::value::boolean(true);
                 response[U("templateData")] = json::value::string(
                     utility::conversions::to_string_t(base64_encode(finalTemplate)));
             }
             else
             {
-                LOG_ERROR("指纹注册失败，无法生成最终模板");
+                std::cerr << "[ERROR] 指纹注册失败，无法生成最终模板" << std::endl;
                 response[U("success")] = json::value::boolean(false);
                 response[U("error")] = json::value::string(U("Failed to generate template"));
             }
@@ -473,7 +448,7 @@ private:
         {
             if (!algorithmHandle_)
             {
-                LOG_ERROR("错误: 算法未初始化");
+                std::cerr << "[ERROR] 错误: 算法未初始化" << std::endl;
                 throw std::runtime_error("Algorithm not initialized");
             }
 
@@ -495,14 +470,14 @@ private:
         }
         else
         {
-            LOG_ERROR("错误: 未知命令 " + cmd);
+            std::cerr << "[ERROR] 错误: 未知命令 " << cmd << std::endl;
             throw std::runtime_error("Unknown command");
         }
 
         if (cmd != "capture")
         {
             std::string responseStr = response.serialize();
-            LOG_INFO("命令执行完成，返回结果: " + responseStr);
+            std::cout << "[INFO] 命令执行完成，返回结果: " << responseStr << std::endl;
         }
         return response;
     }
@@ -511,34 +486,53 @@ private:
 // 全局变量
 std::condition_variable g_exit_cv;
 std::mutex g_exit_mutex;
+bool g_running = true;
+FingerServer* g_server = nullptr;
 
 // 信号处理函数
-void signal_handler(int)
+void signal_handler(int sig)
 {
-    g_exit_cv.notify_one();
+    if (sig == SIGTERM || sig == SIGINT) {
+        std::cout << "[INFO] 收到终止信号，准备优雅退出..." << std::endl;
+        g_running = false;
+        g_exit_cv.notify_one();
+    }
 }
 
 int main()
 {
+    // 设置信号处理
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = signal_handler;
+    sigaction(SIGTERM, &sa, nullptr);
+    sigaction(SIGINT, &sa, nullptr);
+
+    // 创建服务实例
     FingerServer server;
+    g_server = &server;
 
     // 启动服务
     if (!server.start())
     {
+        std::cerr << "[ERROR] 服务启动失败" << std::endl;
         return 1;
     }
 
-    // 设置信号处理
-    signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
-
-    std::cout << "\n按 Ctrl+C 退出...\n" << std::endl;
+    std::cout << "[INFO] 指纹识别服务已成功启动" << std::endl;
 
     // 等待退出信号
     std::unique_lock<std::mutex> lock(g_exit_mutex);
-    g_exit_cv.wait(lock);
+    while (g_running) {
+        g_exit_cv.wait(lock);
+    }
 
+    std::cout << "[INFO] 开始服务清理..." << std::endl;
+    
     // 停止服务
     server.stop();
+    g_server = nullptr;
+    
+    std::cout << "[INFO] 服务已正常退出" << std::endl;
     return 0;
 }

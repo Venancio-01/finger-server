@@ -1,13 +1,26 @@
 [Unit]
-Description=Smart Cabinet Finger Server
+Description=指纹识别服务
 After=network.target
 
 [Service]
 Type=simple
-User=root 
-ExecStart=/opt/smart-cabinet/resources/bin/finger-server
-Restart=on-failure
+ExecStart=/home/qingshan/workspace/front-end/finger-server/build/finger_server
+Restart=always
 RestartSec=10
+User=root
+Group=root
+
+# 创建必要的目录
+RuntimeDirectory=finger-server
+LogsDirectory=finger-server
+ConfigurationDirectory=finger-server
+
+# 放宽安全限制
+ProtectSystem=false
+ProtectHome=false
+NoNewPrivileges=false
+PrivateTmp=false
 
 [Install]
 WantedBy=multi-user.target
+
