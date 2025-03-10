@@ -1,0 +1,13 @@
+[Unit]
+Description=Smart Cabinet Finger Server
+After=network.target
+
+[Service]
+Type=simple
+User=root 
+ExecStart=/opt/smart-cabinet/resources/bin/finger-server
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

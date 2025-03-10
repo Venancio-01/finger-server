@@ -67,6 +67,7 @@ public:
             // 启动 HTTP 服务
             listener_.open().wait();
             LOG_INFO("指纹服务已启动，监听端口: 22813");
+            handleTest();
             return true;
         }
         catch (const std::exception &e)
@@ -119,6 +120,16 @@ private:
     http_listener listener_;
     std::unique_ptr<FingerDevice> device_;
     void *algorithmHandle_;
+
+
+    void handleTest()
+    {
+            bool isConnected = device_->isDeviceConnected();
+            LOG_INFO("设备连接状态: " + std::string(isConnected ? "已连接" : "未连接"));
+
+            bool success = device_->openDevice();
+            LOG_INFO("设备打开状态: " + std::string(success ? "成功" : "失败"));
+    }
 
     void handlePost(http_request request)
     {
