@@ -19,12 +19,14 @@ find_package(Threads REQUIRED)
 # 添加 cpprestsdk 依赖
 find_package(cpprestsdk REQUIRED)
 
+# 添加头文件目录
+include_directories(${CMAKE_SOURCE_DIR}/demo/include)
+
 add_executable(finger_server
     main.cpp
-    finger_device.cpp
-    finger_algorithm.cpp
     base64.cpp
     logger.cpp
+    zkfp_sdk.cpp
 )
 
 target_link_libraries(finger_server
@@ -32,4 +34,13 @@ target_link_libraries(finger_server
     cpprestsdk::cpprest
     nlohmann_json::nlohmann_json
     dl
+    zkfp
+    zkfpcap
+    zkalg12
+    zkfinger10
+    zksensorcore
+    idfprcap
+    silkidcap
+    usb-1.0
+    Threads::Threads
 )
